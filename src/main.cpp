@@ -22,7 +22,7 @@ int main() {
     window.setFramerateLimit(60);
 
     sf::Font font;
-    font.loadFromFile("/home/thiagomm/.fonts/l/LigalexMono.ttf");
+    font.loadFromFile("resources/Roboto.ttf");
 
     std::string title = "Teste";
 
