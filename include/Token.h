@@ -16,6 +16,7 @@ enum class TokenType {
     PARENTHESIS_CLOSE,
     FUNCTION,
     VARIABLE,
+    VARIABLE_Y,
     INVALID,
 };
 

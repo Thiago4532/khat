@@ -41,6 +41,9 @@ ostream& operator<<(ostream& out, Token const& t) {
         case TokenType::VARIABLE:
             valor = "VARIABLE";
             break;
+        case TokenType::VARIABLE_Y:
+            valor = "VARIABLE_Y";
+            break;
         case TokenType::INVALID:
             valor = "INVALID";
             break;

@@ -21,6 +21,7 @@ Parser::Parser(Lexer const& lexer) {
         switch (token.type) {
             case TokenType::NUMBER:
             case TokenType::VARIABLE:
+            case TokenType::VARIABLE_Y:
                 rpn.push_back(token);
                 break;
             case TokenType::PARENTHESIS_OPEN:
@@ -86,6 +87,7 @@ void Parser::_build(std::vector<Token>& rpn) {
             _double = std::stod(*_token.name);
             break;
         case TokenType::VARIABLE: // leaf node
+        case TokenType::VARIABLE_Y:
             break;
 
         default: // function or unary operators
@@ -99,34 +101,40 @@ void Parser::_build(std::vector<Token>& rpn) {
 }
 
 double Parser::evaluate(double x) const {
+    return evaluate(x, 0);
+}
+
+double Parser::evaluate(double x, double y) const {
     switch (_token.type) {
         case TokenType::VARIABLE:
             return x;
+        case TokenType::VARIABLE_Y:
+            return y;
         case TokenType::NUMBER:
             return *_double;
 
         case TokenType::OP_PLUS:
-            return _children[0].evaluate(x) + _children[1].evaluate(x);
+            return _children[0].evaluate(x, y) + _children[1].evaluate(x, y);
         case TokenType::OP_MINUS:
-            return _children[0].evaluate(x) - _children[1].evaluate(x);
+            return _children[0].evaluate(x, y) - _children[1].evaluate(x, y);
         case TokenType::OP_PRODUCT:
-            return _children[0].evaluate(x) * _children[1].evaluate(x);
+            return _children[0].evaluate(x, y) * _children[1].evaluate(x, y);
         case TokenType::OP_DIVIDE:
-            return _children[0].evaluate(x) / _children[1].evaluate(x);
+            return _children[0].evaluate(x, y) / _children[1].evaluate(x, y);
         case TokenType::OP_POWER:
-            return std::pow(_children[0].evaluate(x), _children[1].evaluate(x));
+            return std::pow(_children[0].evaluate(x, y), _children[1].evaluate(x, y));
 
         case TokenType::OP_POSITIVE:
         case TokenType::OP_NEGATIVE:
         case TokenType::FUNCTION:
-            return Functions::unaries[*_token.name](_children[0].evaluate(x));
+            return Functions::unaries[*_token.name](_children[0].evaluate(x, y));
 
         default:
             throw std::runtime_error("como?");
     }
 }
 
-double Parser::operator[](double x) const { return evaluate(x); };
+double Parser::operator[](double x) const { return evaluate(x, 0); };
 Token const& Parser::getToken() const { return this->_token; }
 
 std::vector<Parser> const& Parser::getChildren() const {

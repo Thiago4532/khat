@@ -17,6 +17,7 @@ public:
     std::vector<Parser> const& getChildren() const;
 
     double evaluate(double x) const;
+    double evaluate(double x, double y) const;
 
 private:
     Token _token;

@@ -6,18 +6,14 @@
 #include "Parser.h"
 #include "plot/Graph.hpp"
 
-double f(double x, double y) {
-    return x * x + y * y - 1;
-}
-
 int main() {
-    /*std::string input;
+    std::string input;
     std::getline(std::cin, input);
     Lexer lexer(input);
     Parser parser(lexer);
-    auto f = [&parser](double x) -> double {
-        return parser[x];
-    };*/
+    auto f = [&parser](double x, double y) -> double {
+        return parser.evaluate(x, y);
+    };
 
     float a, b, c, d;
     std::cin >> a >> b >> c >> d;
@@ -80,16 +76,16 @@ int main() {
 //     std::string in;
 //     getline(cin, in);
 //     Lexer lex(in);
-//     Parser p(lex);
 
 //     cout << "Lexer:" << endl;
 //     for (auto e : lex)
 //         cout << e << " ";
 //     cout << endl;
 
+//     Parser p(lex);
 //     cout << "Parser:" << endl;
 //     cout << p << endl;
-//     double x;
-//     cin >> x;
-//     std::cout << p.evaluate(x) << std::endl;
+//     double x, y;
+//     cin >> x >> y;
+//     std::cout << p.evaluate(x, y) << std::endl;
 // }
