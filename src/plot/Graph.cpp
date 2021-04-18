@@ -246,6 +246,46 @@ void Graph::plotFunction(const std::function<double(double)>& f, const sf::Color
     plotData(data, true, false, color);
 }
 
+void Graph::plotRelation(const std::function<double(double, double)>& f, const sf::Color& color) {
+
+    int Nx = _plotTexture.getTexture().getSize().x, Ny = _plotTexture.getTexture().getSize().y;
+
+    std::vector<sf::Vector2f> data {};
+
+    double x0 = _bottomLeft.x;
+    double xf = _topRight.x;
+    double stepx = (xf - x0) / (Nx - 1);
+
+    double y0 = _bottomLeft.y;
+    double yf = _topRight.y;
+    double stepy = (yf - y0) / (Ny - 1);
+
+    for (int i = 0; i < Nx; i += 3) {
+        for (int j = 0; j < Ny; j += 3) {
+
+            sf::Vector2<double> p0 = sf::Vector2<double>(x0 + i * stepx, y0 + j * stepy);
+            double error = 0;
+
+            do {
+
+                double derivativex {}, derivativey {};
+                double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
+                derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
+                derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
+
+                sf::Vector2<double> p = p0 - sf::Vector2<double>(derivativex, derivativey) * f(p0.x, p0.y) / (derivativey * derivativey + derivativex * derivativex);
+                error = pow((p - p0).x, 2.0) + pow((p - p0).y, 2.0);
+                p0 = p;
+
+            } while (error > (stepx * stepx + stepy * stepy));
+
+            data.push_back(sf::Vector2f(p0.x, p0.y));
+        }
+    }
+
+    plotData(data, false, true, color, color);
+}
+
 //Display Function Implementation
 
 void Graph::display() {

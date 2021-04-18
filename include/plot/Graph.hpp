@@ -66,6 +66,7 @@ public:
 
     void plotData(const std::vector<sf::Vector2f>& data, const bool& drawLines = true, const bool& drawPoints = false, const sf::Color& lineColor = sf::Color::Black, const sf::Color& pointColor = sf::Color::Black);
     void plotFunction(const std::function<double(double)>& f, const sf::Color& color);
+    void plotRelation(const std::function<double(double, double)>& f, const sf::Color& color);
 
     //Display Function
     void display();

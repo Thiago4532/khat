@@ -6,16 +6,21 @@
 #include "Parser.h"
 #include "plot/Graph.hpp"
 
+double f(double x, double y) {
+    return x * x + y * y - 1;
+}
+
 int main() {
-    std::string input;
+    /*std::string input;
     std::getline(std::cin, input);
-    float a, b, c, d;
-    std::cin >> a >> b >> c >> d;
     Lexer lexer(input);
     Parser parser(lexer);
     auto f = [&parser](double x) -> double {
         return parser[x];
-    };
+    };*/
+
+    float a, b, c, d;
+    std::cin >> a >> b >> c >> d;
 
     sf::RenderWindow window(sf::VideoMode(1000, 1000), "Teste",
         sf::Style::Close | sf::Style::Titlebar);
@@ -36,7 +41,7 @@ int main() {
         title, 30, font);
 
     myGraph.plotClear();
-    myGraph.plotFunction(f, sf::Color::Red);
+    myGraph.plotRelation(f, sf::Color::Red);
     myGraph.display();
 
     while (window.isOpen()) {
