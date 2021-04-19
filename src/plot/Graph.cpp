@@ -246,6 +246,9 @@ void Graph::plotFunction(const std::function<double(double)>& f, const sf::Color
     plotData(data, true, false, color);
 }
 
+#include <thread>
+#include <unistd.h>
+
 void Graph::plotRelation(const std::function<double(double, double)>& f, const sf::Color& color) {
 
     int Nx = _plotTexture.getTexture().getSize().x, Ny = _plotTexture.getTexture().getSize().y;
@@ -260,9 +263,8 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
     double yf = _topRight.y;
     double stepy = (yf - y0) / (Ny - 1);
 
-    for (int i = 0; i < Nx; i += 3) {
-        for (int j = 0; j < Ny; j += 3) {
-
+    for (int i = 0; i < Nx; i += 1) {
+        for (int j = 0; j < Ny; j += 1) {
             sf::Vector2<double> p0 = sf::Vector2<double>(x0 + i * stepx, y0 + j * stepy);
             double error = 0;
 
@@ -279,11 +281,9 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
             } while (error > (stepx * stepx + stepy * stepy));
 
-            data.push_back(sf::Vector2f(p0.x, p0.y));
+            plotPoint(sf::Vector2f(p0.x, p0.y), color);
         }
     }
-
-    plotData(data, false, true, color, color);
 }
 
 //Display Function Implementation

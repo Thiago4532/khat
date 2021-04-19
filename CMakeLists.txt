@@ -26,6 +26,8 @@ target_link_libraries(MathParser
     sfml-graphics
     sfml-window
     sfml-system
+    pthread
+    X11
 )
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

@@ -2,11 +2,14 @@
 
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <thread>
 
 #include "Parser.h"
 #include "plot/Graph.hpp"
 
+#include <X11/Xlib.h>
 int main() {
+    XInitThreads();
     std::string input;
     std::getline(std::cin, input);
     Lexer lexer(input);
@@ -25,7 +28,7 @@ int main() {
     sf::Font font;
     font.loadFromFile("resources/Roboto.ttf");
 
-    std::string title = "Teste";
+    std::string title = input;
 
     sf::RectangleShape graphRect(sf::Vector2f(800, 800));
     graphRect.setPosition(sf::Vector2f(100, 100));
@@ -37,8 +40,10 @@ int main() {
         title, 30, font);
 
     myGraph.plotClear();
-    myGraph.plotRelation(f, sf::Color::Red);
-    myGraph.display();
+
+    std::thread thr([&] {
+        myGraph.plotRelation(f, sf::Color::Blue);
+    });
 
     while (window.isOpen()) {
         sf::Event event;
@@ -49,10 +54,13 @@ int main() {
             }
         }
 
+        myGraph.display();
         window.clear(sf::Color::Cyan);
         window.draw(myGraph);
         window.display();
     }
+
+    thr.join();
 }
 
 // #include <iostream>
