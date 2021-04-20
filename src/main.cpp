@@ -7,9 +7,7 @@
 #include "Parser.h"
 #include "plot/Graph.hpp"
 
-#include <X11/Xlib.h>
 int main() {
-    XInitThreads();
     std::string input;
     std::getline(std::cin, input);
     Lexer lexer(input);
@@ -23,7 +21,7 @@ int main() {
 
     sf::RenderWindow window(sf::VideoMode(1000, 1000), "Teste",
         sf::Style::Close | sf::Style::Titlebar);
-    window.setFramerateLimit(60);
+    window.setVerticalSyncEnabled(true);
 
     sf::Font font;
     font.loadFromFile("resources/Roboto.ttf");
@@ -51,6 +49,7 @@ int main() {
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 window.close();
+                goto terminate;
             }
         }
 
@@ -60,6 +59,8 @@ int main() {
         window.display();
     }
 
+terminate:
+    myGraph.terminate();
     thr.join();
 }
 

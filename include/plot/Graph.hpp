@@ -2,6 +2,7 @@
 #define GRAPH_HPP
 
 #include <SFML/Graphics.hpp>
+#include <atomic>
 #include <functional>
 #include <math.h>
 #include <sstream>
@@ -16,9 +17,11 @@ private:
     sf::Vector2f _bottomLeft {}, _topRight {};
     std::string _title {};
     int _fontSize {};
+    std::atomic_bool _terminate {};
     sf::Font _font {};
     sf::Text _text {};
     std::vector<sf::Text> _xScale {}, _yScale {};
+    std::vector<sf::Vertex> _points;
 
 public:
     //Constructors
@@ -70,6 +73,7 @@ public:
 
     //Display Function
     void display();
+    void terminate();
 
     //Draw Function
 

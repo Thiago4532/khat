@@ -246,11 +246,13 @@ void Graph::plotFunction(const std::function<double(double)>& f, const sf::Color
     plotData(data, true, false, color);
 }
 
-#include <thread>
-#include <unistd.h>
+void Graph::terminate() {
+    _terminate = true;
+}
+
+#include <queue>
 
 void Graph::plotRelation(const std::function<double(double, double)>& f, const sf::Color& color) {
-
     int Nx = _plotTexture.getTexture().getSize().x, Ny = _plotTexture.getTexture().getSize().y;
 
     std::vector<sf::Vector2f> data {};
@@ -263,32 +265,67 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
     double yf = _topRight.y;
     double stepy = (yf - y0) / (Ny - 1);
 
-    for (int i = 0; i < Nx; i += 1) {
-        for (int j = 0; j < Ny; j += 1) {
-            sf::Vector2<double> p0 = sf::Vector2<double>(x0 + i * stepx, y0 + j * stepy);
-            double error = 0;
+    _points.resize(Nx * Ny);
+    std::queue<std::pair<int, int>> fila;
 
-            do {
+    std::vector<std::pair<int, int>> pontos;
+    for (int i = 0; i < Nx; i++)
+        for (int j = 0; j < Ny; j++)
+            pontos.emplace_back(i, j);
+    std::random_shuffle(pontos.begin(), pontos.end());
 
-                double derivativex {}, derivativey {};
-                double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
-                derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
-                derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
-
-                sf::Vector2<double> p = p0 - sf::Vector2<double>(derivativex, derivativey) * f(p0.x, p0.y) / (derivativey * derivativey + derivativex * derivativex);
-                error = pow((p - p0).x, 2.0) + pow((p - p0).y, 2.0);
-                p0 = p;
-
-            } while (error > (stepx * stepx + stepy * stepy));
-
-            plotPoint(sf::Vector2f(p0.x, p0.y), color);
+    for (int i_ = 0; i_ < Nx; i_++) {
+        for (int j_ = 0; j_ < Ny; j_++) {
+            int i = pontos[i_ * Ny + j_].first;
+            int j = pontos[i_ * Ny + j_].second;
+            fila.emplace(i, j);
         }
+    }
+
+    double aux = (stepx * stepx + stepy * stepy) * 0.125;
+    while (!fila.empty() && !_terminate) {
+        int i = fila.front().first;
+        int j = fila.front().second;
+        sf::Vector2<double> p0 = { x0 + i * stepx, y0 + j * stepy };
+
+        fila.pop();
+
+        double error = 1e18;
+        double derivativex {}, derivativey {};
+        double modulo;
+        double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
+
+        while (!_terminate) {
+            derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
+            derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
+            if (std::isnan(f(p0.x, p0.y))) {
+                break;
+            }
+            modulo = derivativex * derivativex + derivativey * derivativey;
+            if (modulo * aux >= error)
+                break;
+
+            sf::Vector2<double> p = p0 - sf::Vector2<double>(derivativex, derivativey) * f(p0.x, p0.y) / (derivativey * derivativey + derivativex * derivativex);
+
+            error = f(p.x, p.y) * f(p.x, p.y);
+
+            p0 = p;
+        }
+        if (std::isnan(f(p0.x, p0.y)))
+            continue;
+
+        sf::Vector2<double> grad = { derivativex / modulo, derivativey / modulo };
+
+                // plotPoint(sf::Vector2f(p0.x, p0.y), color);
+        // _points[i * Ny + j] = sf::Vertex(convertPoint(sf::Vector2f(p0.x, p0.y)), color);
     }
 }
 
 //Display Function Implementation
 
 void Graph::display() {
+    // _plotTexture.clear(sf::Color::White);
+    // _plotTexture.draw(&_points[0], _points.size(), sf::Points);
     _plotTexture.display();
 
     sf::Sprite sprite;
@@ -359,4 +396,5 @@ void Graph::draw(sf::RenderTarget& target, sf::RenderStates states) const {
         _graphBox.getGlobalBounds().top));
 
     target.draw(sprite);
+    // target.draw(&_points[0], _points.size(), sf::Points);
 }
