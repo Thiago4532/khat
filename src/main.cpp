@@ -48,7 +48,7 @@ int main() {
     myGraph.plotClear(sf::Color::Black);
 
     std::thread thr([&] {
-        myGraph.plotRelation(f, sf::Color(204, 86, 82));
+        myGraph.plotRelation(f, sf::Color(255, 64, 64));
     });
 
     // thr.join();

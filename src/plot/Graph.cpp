@@ -215,14 +215,14 @@ void Graph::plotPoint(const sf::Vector2f& point, const sf::Color& color) {
 }
 
 static std::atomic<int> k;
-static sf::Clock clock2;
+//static sf::Clock clock2;
 
 void Graph::plotLine(const sf::Vector2f& startPoint, const sf::Vector2f& endPoint, const sf::Color& color) {
     sf::Vector2f realStartPoint = convertPoint(startPoint), realEndPoint = convertPoint(endPoint);
 
-    while (clock2.getElapsedTime().asMilliseconds() < 1) { }
+    //while (clock2.getElapsedTime().asMilliseconds() < 1) { }
 
-    clock2.restart();
+    //clock2.restart();
     _lines1[k] = { realStartPoint, color };
     _lines2[k++] = { realEndPoint, color };
 }
@@ -327,13 +327,13 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
         double modulo;
         double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
 
-        for (int it = 0; it < 25 && !_terminate; it++) {
+        for (int it = 0; !_terminate; it++) {
             derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
             derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
 
             modulo = derivativex * derivativex + derivativey * derivativey;
-            // if (modulo * aux >= error)
-            //     break;
+            if (modulo * aux >= error and it > 25)
+                break;
 
             sf::Vector2<double> p = p0 - sf::Vector2<double>(derivativex, derivativey) * f(p0.x, p0.y) / (derivativey * derivativey + derivativex * derivativex);
 
@@ -422,19 +422,22 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 void Graph::display() {
     static int ini = 0;
     static int var = 0;
-    static sf::Color lineColor = sf::Color(rand() % 256, rand() % 256, rand() % 256);
+    static sf::Color lineColor = _lines1[0].color;
     for (; ini < k; ini++) {
-        // sf::Vertex line[] = {
-        //     _lines1[ini], _lines2[ini]
-        // };
-
-        // _plotTexture.draw(line, 2, sf::Lines);
-        sw::Line line(_lines1[ini].position, _lines2[ini].position, 5, lineColor);
-        var++;
-        if (var == 50) {
-            lineColor = sf::Color(rand() % 256, rand() % 256, rand() % 256);
-            var = 0;
-        }
+        float d = std::sqrt((_lines1[ini].position.x - _lines2[ini].position.x) * (_lines1[ini].position.x - _lines2[ini].position.x) + (_lines1[ini].position.y - _lines2[ini].position.y) * (_lines1[ini].position.y - _lines2[ini].position.y));
+        sf::RectangleShape line(sf::Vector2f(d, 2.5f));
+        line.setOrigin(
+            line.getLocalBounds().left + 0.5f * line.getLocalBounds().width,
+            line.getLocalBounds().top + 0.5f * line.getLocalBounds().height);
+        line.setPosition(0.5 * (_lines1[ini].position.x + _lines2[ini].position.x), 0.5 * (_lines1[ini].position.y + _lines2[ini].position.y));
+        line.setFillColor(_lines1[ini].color);
+        double theta;
+        double pi = 3.1415926535898;
+        if (_lines1[ini].position.x == _lines2[ini].position.x) {
+            theta = 90.0;
+        } else
+            theta = (180.0 / pi) * std::atan((_lines1[ini].position.y - _lines2[ini].position.y) / (_lines1[ini].position.x - _lines2[ini].position.x));
+        line.rotate(theta);
         _plotTexture.draw(line);
     }
 
