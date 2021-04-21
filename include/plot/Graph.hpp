@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <atomic>
+#include <complex>
 #include <functional>
 #include <math.h>
 #include <sstream>
@@ -17,11 +18,16 @@ private:
     sf::Vector2f _bottomLeft {}, _topRight {};
     std::string _title {};
     int _fontSize {};
+    int _Nx, _Ny;
     std::atomic_bool _terminate {};
     sf::Font _font {};
     sf::Text _text {};
     std::vector<sf::Text> _xScale {}, _yScale {};
-    std::vector<sf::Vertex> _points;
+    sf::Vertex* _lines1;
+    sf::Vertex* _lines2;
+    bool** _collision;
+
+    bool ta_dentro(std::complex<double> const& c, double x0, double y0, double xf, double yf);
 
 public:
     //Constructors

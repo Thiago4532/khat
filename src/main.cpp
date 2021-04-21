@@ -6,6 +6,8 @@
 
 #include "Parser.h"
 #include "plot/Graph.hpp"
+#include <cerrno>
+#include <unistd.h>
 
 int main() {
     std::string input;
@@ -13,7 +15,12 @@ int main() {
     Lexer lexer(input);
     Parser parser(lexer);
     auto f = [&parser](double x, double y) -> double {
-        return parser.evaluate(x, y);
+        errno = 0;
+        auto calc = parser.evaluate(x, y);
+        if (errno != 0)
+            return NAN;
+
+        return calc;
     };
 
     float a, b, c, d;
@@ -26,7 +33,7 @@ int main() {
     sf::Font font;
     font.loadFromFile("resources/Roboto.ttf");
 
-    std::string title = input;
+    std::string title = input + " = 0";
 
     sf::RectangleShape graphRect(sf::Vector2f(800, 800));
     graphRect.setPosition(sf::Vector2f(100, 100));
@@ -43,13 +50,16 @@ int main() {
         myGraph.plotRelation(f, sf::Color::Blue);
     });
 
+    // thr.join();
     while (window.isOpen()) {
         sf::Event event;
 
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 window.close();
-                goto terminate;
+                myGraph.terminate();
+                thr.join();
+                return 0;
             }
         }
 
@@ -59,7 +69,6 @@ int main() {
         window.display();
     }
 
-terminate:
     myGraph.terminate();
     thr.join();
 }

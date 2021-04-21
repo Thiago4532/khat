@@ -1,5 +1,9 @@
 #include "plot/Graph.hpp"
+#include <cerrno>
+#include <complex>
+#include <cstring>
 #include <iostream>
+#include <queue>
 
 //Setters Implementations
 
@@ -19,6 +23,15 @@ void Graph::setPlotBox(const sf::RectangleShape& plotBox) {
     sf::ContextSettings settings;
     settings.antialiasingLevel = 16;
     _plotTexture.create(plotBox.getLocalBounds().width, plotBox.getLocalBounds().height, settings);
+    _Nx = _plotTexture.getTexture().getSize().x;
+    _Ny = _plotTexture.getTexture().getSize().y;
+
+    _lines1 = new sf::Vertex[_Nx * _Ny];
+    _lines2 = new sf::Vertex[_Nx * _Ny];
+
+    _collision = new bool*[_Nx * 6];
+    for (int i = 0; i < _Nx * 6; i++)
+        _collision[i] = new bool[_Ny * 6];
 }
 
 void Graph::setTitle(const std::string& title) {
@@ -194,19 +207,18 @@ void Graph::plotClear(const sf::Color& color) {
 void Graph::plotPoint(const sf::Vector2f& point, const sf::Color& color) {
     sf::Vector2f realPoint = convertPoint(point);
 
-    sf::Vertex pointVertex[] = { sf::Vertex(realPoint, color) };
-    _plotTexture.draw(pointVertex, 1, sf::Points);
+    sf::Vertex p[] = {
+        sf::Vertex(realPoint, color),
+    };
+    _plotTexture.draw(p, 1, sf::Points);
 }
 
+static std::atomic<int> k;
 void Graph::plotLine(const sf::Vector2f& startPoint, const sf::Vector2f& endPoint, const sf::Color& color) {
-
     sf::Vector2f realStartPoint = convertPoint(startPoint), realEndPoint = convertPoint(endPoint);
 
-    sf::Vertex line[] = {
-        sf::Vertex(realStartPoint, color),
-        sf::Vertex(realEndPoint, color)
-    };
-    _plotTexture.draw(line, 2, sf::Lines);
+    _lines1[k] = { realStartPoint, color };
+    _lines2[k++] = { realEndPoint, color };
 }
 
 //Plot Functions Implementations
@@ -229,7 +241,6 @@ void Graph::plotData(const std::vector<sf::Vector2f>& data, const bool& drawLine
 }
 
 void Graph::plotFunction(const std::function<double(double)>& f, const sf::Color& color) {
-
     int N = _plotTexture.getTexture().getSize().x;
 
     std::vector<sf::Vector2f> data {};
@@ -242,7 +253,7 @@ void Graph::plotFunction(const std::function<double(double)>& f, const sf::Color
         double x = x0 + i * step;
         data.push_back(sf::Vector2f(x, f(x)));
     }
-    std::cout << "A\n";
+
     plotData(data, true, false, color);
 }
 
@@ -250,11 +261,26 @@ void Graph::terminate() {
     _terminate = true;
 }
 
-#include <queue>
+bool Graph::ta_dentro(std::complex<double> const& c, double x0, double y0, double xf, double yf) {
+    auto x = real(c);
+    auto y = imag(c);
+
+    if (x < x0 || x > xf || y < y0 || y > yf)
+        return true;
+
+    int i = std::floor((x - x0) * (6 * _Nx - 1) / (xf - x0));
+    int j = std::floor((y - y0) * (6 * _Ny - 1) / (yf - y0));
+
+    if (_collision[i][j])
+        return true;
+
+    _collision[i][j] = true;
+
+    return false;
+}
 
 void Graph::plotRelation(const std::function<double(double, double)>& f, const sf::Color& color) {
-    int Nx = _plotTexture.getTexture().getSize().x, Ny = _plotTexture.getTexture().getSize().y;
-
+    int Nx = _Nx, Ny = _Ny;
     std::vector<sf::Vector2f> data {};
 
     double x0 = _bottomLeft.x;
@@ -263,9 +289,9 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
     double y0 = _bottomLeft.y;
     double yf = _topRight.y;
+
     double stepy = (yf - y0) / (Ny - 1);
 
-    _points.resize(Nx * Ny);
     std::queue<std::pair<int, int>> fila;
 
     std::vector<std::pair<int, int>> pontos;
@@ -287,6 +313,7 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
         int i = fila.front().first;
         int j = fila.front().second;
         sf::Vector2<double> p0 = { x0 + i * stepx, y0 + j * stepy };
+        sf::Vector2<double> pIni = { x0 + i * stepx, y0 + j * stepy };
 
         fila.pop();
 
@@ -295,12 +322,10 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
         double modulo;
         double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
 
-        while (!_terminate) {
+        for (int it = 0; it < 10 && !_terminate; it++) {
             derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
             derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
-            if (std::isnan(f(p0.x, p0.y))) {
-                break;
-            }
+
             modulo = derivativex * derivativex + derivativey * derivativey;
             if (modulo * aux >= error)
                 break;
@@ -311,21 +336,93 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
             p0 = p;
         }
+
         if (std::isnan(f(p0.x, p0.y)))
             continue;
 
-        sf::Vector2<double> grad = { derivativex / modulo, derivativey / modulo };
+        std::complex<double> p = { p0.x, p0.y };
+        if (ta_dentro(p, x0, y0, xf, yf))
+            continue;
 
-                // plotPoint(sf::Vector2f(p0.x, p0.y), color);
-        // _points[i * Ny + j] = sf::Vertex(convertPoint(sf::Vector2f(p0.x, p0.y)), color);
+        auto dx1 = derivativex;
+        auto dx2 = derivativey;
+        auto paux = p;
+
+        std::complex<double> grad = { derivativex, derivativey };
+
+        double step = e * 8;
+        while (!_terminate) {
+            auto dir = (grad / std::abs(grad)) * std::complex<double>(0, -1) * step;
+            auto p1 = p;
+            p += dir;
+
+            if (std::isnan(f(real(p), imag(p))))
+                break;
+
+            derivativex = (f(std::real(p) + e, std::imag(p)) - f(std::real(p), std::imag(p))) / e;
+            derivativey = (f(std::real(p), std::imag(p) + e) - f(std::real(p), std::imag(p))) / e;
+
+            grad = { derivativex, derivativey };
+
+            p -= grad * f(std::real(p), std::imag(p)) / std::norm(grad);
+
+            if (ta_dentro(p, x0, y0, xf, yf))
+                break;
+
+            derivativex = (f(std::real(p) + e, std::imag(p)) - f(std::real(p), std::imag(p))) / e;
+            derivativey = (f(std::real(p), std::imag(p) + e) - f(std::real(p), std::imag(p))) / e;
+
+            grad = { derivativex, derivativey };
+
+            plotLine(sf::Vector2f(std::real(p1), std::imag(p1)), sf::Vector2f(std::real(p), std::imag(p)), color);
+        }
+
+        derivativex = dx1;
+        derivativey = dx2;
+        p = paux;
+
+        grad = { derivativex, derivativey };
+
+        while (!_terminate) {
+            auto dir = (grad / std::abs(grad)) * std::complex<double>(0, 1) * step;
+            auto p1 = p;
+            p += dir;
+
+            if (std::isnan(f(real(p), imag(p))))
+                break;
+
+            derivativex = (f(std::real(p) + e, std::imag(p)) - f(std::real(p), std::imag(p))) / e;
+            derivativey = (f(std::real(p), std::imag(p) + e) - f(std::real(p), std::imag(p))) / e;
+
+            grad = { derivativex, derivativey };
+
+            p -= grad * f(std::real(p), std::imag(p)) / std::norm(grad);
+
+            if (ta_dentro(p, x0, y0, xf, yf))
+                break;
+
+            derivativex = (f(std::real(p) + e, std::imag(p)) - f(std::real(p), std::imag(p))) / e;
+            derivativey = (f(std::real(p), std::imag(p) + e) - f(std::real(p), std::imag(p))) / e;
+
+            grad = { derivativex, derivativey };
+
+            plotLine(sf::Vector2f(std::real(p1), std::imag(p1)), sf::Vector2f(std::real(p), std::imag(p)), color);
+        }
     }
 }
 
 //Display Function Implementation
 
 void Graph::display() {
-    // _plotTexture.clear(sf::Color::White);
-    // _plotTexture.draw(&_points[0], _points.size(), sf::Points);
+    static int ini = 0;
+
+    for (; ini < k; ini++) {
+        sf::Vertex line[] = {
+            _lines1[ini], _lines2[ini]
+        };
+        _plotTexture.draw(line, 2, sf::Points);
+    }
+
     _plotTexture.display();
 
     sf::Sprite sprite;
