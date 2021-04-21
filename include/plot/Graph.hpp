@@ -27,7 +27,7 @@ private:
     sf::Vertex* _lines2;
     bool** _collision;
 
-    bool ta_dentro(std::complex<double> const& c, double x0, double y0, double xf, double yf);
+    bool codigo_do_luca(std::complex<double> const& c, double x0, double y0, double xf, double yf);
 
 public:
     //Constructors

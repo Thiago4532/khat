@@ -261,7 +261,7 @@ void Graph::terminate() {
     _terminate = true;
 }
 
-bool Graph::ta_dentro(std::complex<double> const& c, double x0, double y0, double xf, double yf) {
+bool Graph::codigo_do_luca(std::complex<double> const& c, double x0, double y0, double xf, double yf) {
     auto x = real(c);
     auto y = imag(c);
 
@@ -341,7 +341,7 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
             continue;
 
         std::complex<double> p = { p0.x, p0.y };
-        if (ta_dentro(p, x0, y0, xf, yf))
+        if (codigo_do_luca(p, x0, y0, xf, yf))
             continue;
 
         auto dx1 = derivativex;
@@ -366,7 +366,7 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
             p -= grad * f(std::real(p), std::imag(p)) / std::norm(grad);
 
-            if (ta_dentro(p, x0, y0, xf, yf))
+            if (codigo_do_luca(p, x0, y0, xf, yf))
                 break;
 
             derivativex = (f(std::real(p) + e, std::imag(p)) - f(std::real(p), std::imag(p))) / e;
@@ -398,7 +398,7 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
             p -= grad * f(std::real(p), std::imag(p)) / std::norm(grad);
 
-            if (ta_dentro(p, x0, y0, xf, yf))
+            if (codigo_do_luca(p, x0, y0, xf, yf))
                 break;
 
             derivativex = (f(std::real(p) + e, std::imag(p)) - f(std::real(p), std::imag(p))) / e;
