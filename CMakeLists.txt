@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(SOURCES
+    src/SelbaWard/Line.cpp
     src/plot/Graph.cpp
     src/Functions.cpp
     src/aux.cpp

@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 int main() {
+    srand(time(0));
     std::string input;
     std::getline(std::cin, input);
     Lexer lexer(input);
@@ -26,8 +27,8 @@ int main() {
     float a, b, c, d;
     std::cin >> a >> b >> c >> d;
 
-    sf::RenderWindow window(sf::VideoMode(1000, 1000), "Teste",
-        sf::Style::Close | sf::Style::Titlebar);
+    sf::RenderWindow window(sf::VideoMode(1920, 1080), "Teste",
+        sf::Style::Close | sf::Style::Fullscreen);
     window.setVerticalSyncEnabled(true);
 
     sf::Font font;
@@ -35,19 +36,19 @@ int main() {
 
     std::string title = input + " = 0";
 
-    sf::RectangleShape graphRect(sf::Vector2f(800, 800));
-    graphRect.setPosition(sf::Vector2f(100, 100));
+    sf::RectangleShape graphRect(sf::Vector2f(1920, 1080));
+    graphRect.setPosition(sf::Vector2f(0, 0));
 
-    sf::RectangleShape plotRect(sf::Vector2f(600, 600));
-    plotRect.setPosition(sf::Vector2f(200, 200));
+    sf::RectangleShape plotRect(sf::Vector2f(1920, 1080));
+    plotRect.setPosition(sf::Vector2f(0, 0));
 
     Graph myGraph(graphRect, plotRect, sf::Vector2f(a, b), sf::Vector2f(c, d),
         title, 30, font);
 
-    myGraph.plotClear();
+    myGraph.plotClear(sf::Color::Black);
 
     std::thread thr([&] {
-        myGraph.plotRelation(f, sf::Color::Blue);
+        myGraph.plotRelation(f, sf::Color(204, 86, 82));
     });
 
     // thr.join();
@@ -64,7 +65,7 @@ int main() {
         }
 
         myGraph.display();
-        window.clear(sf::Color::Cyan);
+        window.clear(sf::Color::Black);
         window.draw(myGraph);
         window.display();
     }

@@ -1,4 +1,5 @@
 #include "plot/Graph.hpp"
+#include "SelbaWard/Line.hpp"
 #include <cerrno>
 #include <complex>
 #include <cstring>
@@ -214,9 +215,14 @@ void Graph::plotPoint(const sf::Vector2f& point, const sf::Color& color) {
 }
 
 static std::atomic<int> k;
+static sf::Clock clock2;
+
 void Graph::plotLine(const sf::Vector2f& startPoint, const sf::Vector2f& endPoint, const sf::Color& color) {
     sf::Vector2f realStartPoint = convertPoint(startPoint), realEndPoint = convertPoint(endPoint);
 
+    while (clock2.getElapsedTime().asMilliseconds() < 1) { }
+
+    clock2.restart();
     _lines1[k] = { realStartPoint, color };
     _lines2[k++] = { realEndPoint, color };
 }
@@ -271,11 +277,21 @@ bool Graph::codigo_do_luca(std::complex<double> const& c, double x0, double y0, 
     int i = std::floor((x - x0) * (6 * _Nx - 1) / (xf - x0));
     int j = std::floor((y - y0) * (6 * _Ny - 1) / (yf - y0));
 
+    for (int di = -1; di <= 1; ++di) {
+        for (int dj = -1; dj <= 1; ++dj) {
+            int i2 = i + di, j2 = j + dj;
+            if (i2 < 0 || i2 >= 6 * _Nx || j2 < 0 || j2 >= 6 * _Ny)
+                continue;
+
+            if (_collision[i2][j2]) {
+                // _collision[i][j] = true;
+                return true;
+            }
+        }
+    }
     if (_collision[i][j])
         return true;
-
     _collision[i][j] = true;
-
     return false;
 }
 
@@ -292,43 +308,32 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
     double stepy = (yf - y0) / (Ny - 1);
 
-    std::queue<std::pair<int, int>> fila;
-
-    std::vector<std::pair<int, int>> pontos;
+    std::pair<int, int>* pontos = new std::pair<int, int>[Nx * Ny];
     for (int i = 0; i < Nx; i++)
         for (int j = 0; j < Ny; j++)
-            pontos.emplace_back(i, j);
-    std::random_shuffle(pontos.begin(), pontos.end());
+            pontos[i * Ny + j] = { i, j };
 
-    for (int i_ = 0; i_ < Nx; i_++) {
-        for (int j_ = 0; j_ < Ny; j_++) {
-            int i = pontos[i_ * Ny + j_].first;
-            int j = pontos[i_ * Ny + j_].second;
-            fila.emplace(i, j);
-        }
-    }
+    std::random_shuffle(pontos, pontos + Nx * Ny);
 
-    double aux = (stepx * stepx + stepy * stepy) * 0.125;
-    while (!fila.empty() && !_terminate) {
-        int i = fila.front().first;
-        int j = fila.front().second;
+    double aux = (stepx * stepx + stepy * stepy) * 0.01;
+    for (int ll = 0; ll < Nx * Ny && !_terminate; ll++) {
+        int i = pontos[ll].first, j = pontos[ll].second;
+
         sf::Vector2<double> p0 = { x0 + i * stepx, y0 + j * stepy };
         sf::Vector2<double> pIni = { x0 + i * stepx, y0 + j * stepy };
-
-        fila.pop();
 
         double error = 1e18;
         double derivativex {}, derivativey {};
         double modulo;
         double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
 
-        for (int it = 0; it < 10 && !_terminate; it++) {
+        for (int it = 0; it < 25 && !_terminate; it++) {
             derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
             derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
 
             modulo = derivativex * derivativex + derivativey * derivativey;
-            if (modulo * aux >= error)
-                break;
+            // if (modulo * aux >= error)
+            //     break;
 
             sf::Vector2<double> p = p0 - sf::Vector2<double>(derivativex, derivativey) * f(p0.x, p0.y) / (derivativey * derivativey + derivativex * derivativex);
 
@@ -341,8 +346,9 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
             continue;
 
         std::complex<double> p = { p0.x, p0.y };
-        if (codigo_do_luca(p, x0, y0, xf, yf))
+        if (codigo_do_luca(p, x0, y0, xf, yf)) {
             continue;
+        }
 
         auto dx1 = derivativex;
         auto dx2 = derivativey;
@@ -350,7 +356,7 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
         std::complex<double> grad = { derivativex, derivativey };
 
-        double step = e * 8;
+        double step = (stepx + stepy) / 4.0;
         while (!_terminate) {
             auto dir = (grad / std::abs(grad)) * std::complex<double>(0, -1) * step;
             auto p1 = p;
@@ -366,15 +372,15 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
             p -= grad * f(std::real(p), std::imag(p)) / std::norm(grad);
 
-            if (codigo_do_luca(p, x0, y0, xf, yf))
-                break;
-
             derivativex = (f(std::real(p) + e, std::imag(p)) - f(std::real(p), std::imag(p))) / e;
             derivativey = (f(std::real(p), std::imag(p) + e) - f(std::real(p), std::imag(p))) / e;
 
             grad = { derivativex, derivativey };
 
             plotLine(sf::Vector2f(std::real(p1), std::imag(p1)), sf::Vector2f(std::real(p), std::imag(p)), color);
+            if (codigo_do_luca(p, x0, y0, xf, yf)) {
+                break;
+            }
         }
 
         derivativex = dx1;
@@ -398,15 +404,15 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
             p -= grad * f(std::real(p), std::imag(p)) / std::norm(grad);
 
-            if (codigo_do_luca(p, x0, y0, xf, yf))
-                break;
-
             derivativex = (f(std::real(p) + e, std::imag(p)) - f(std::real(p), std::imag(p))) / e;
             derivativey = (f(std::real(p), std::imag(p) + e) - f(std::real(p), std::imag(p))) / e;
 
             grad = { derivativex, derivativey };
 
             plotLine(sf::Vector2f(std::real(p1), std::imag(p1)), sf::Vector2f(std::real(p), std::imag(p)), color);
+            if (codigo_do_luca(p, x0, y0, xf, yf)) {
+                break;
+            }
         }
     }
 }
@@ -415,12 +421,21 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
 void Graph::display() {
     static int ini = 0;
-
+    static int var = 0;
+    static sf::Color lineColor = sf::Color(rand() % 256, rand() % 256, rand() % 256);
     for (; ini < k; ini++) {
-        sf::Vertex line[] = {
-            _lines1[ini], _lines2[ini]
-        };
-        _plotTexture.draw(line, 2, sf::Points);
+        // sf::Vertex line[] = {
+        //     _lines1[ini], _lines2[ini]
+        // };
+
+        // _plotTexture.draw(line, 2, sf::Lines);
+        sw::Line line(_lines1[ini].position, _lines2[ini].position, 5, lineColor);
+        var++;
+        if (var == 50) {
+            lineColor = sf::Color(rand() % 256, rand() % 256, rand() % 256);
+            var = 0;
+        }
+        _plotTexture.draw(line);
     }
 
     _plotTexture.display();
@@ -437,7 +452,7 @@ void Graph::display() {
         _plotBox.getGlobalBounds().left + 0.5f * _plotBox.getGlobalBounds().width - _graphBox.getGlobalBounds().left,
         _plotBox.getGlobalBounds().top + 0.5f * _plotBox.getGlobalBounds().height - _graphBox.getGlobalBounds().top);
 
-    _graphTexture.clear(sf::Color::White);
+    _graphTexture.clear(sf::Color::Black);
 
     sf::RectangleShape aux = _plotBox;
     aux.move(
