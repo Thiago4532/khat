@@ -1,5 +1,4 @@
 #include "plot/Graph.hpp"
-#include "SelbaWard/Line.hpp"
 #include <cerrno>
 #include <complex>
 #include <cstring>
@@ -214,15 +213,15 @@ void Graph::plotPoint(const sf::Vector2f& point, const sf::Color& color) {
     _plotTexture.draw(p, 1, sf::Points);
 }
 
-static std::atomic<int> k;
-//static sf::Clock clock2;
+static int k;
+static sf::Clock clock2;
 
 void Graph::plotLine(const sf::Vector2f& startPoint, const sf::Vector2f& endPoint, const sf::Color& color) {
     sf::Vector2f realStartPoint = convertPoint(startPoint), realEndPoint = convertPoint(endPoint);
 
-    //while (clock2.getElapsedTime().asMilliseconds() < 1) { }
+    // while (clock2.getElapsedTime().asMilliseconds() < 1) { }
+    // clock2.restart();
 
-    //clock2.restart();
     _lines1[k] = { realStartPoint, color };
     _lines2[k++] = { realEndPoint, color };
 }
@@ -267,7 +266,7 @@ void Graph::terminate() {
     _terminate = true;
 }
 
-bool Graph::codigo_do_luca(std::complex<double> const& c, double x0, double y0, double xf, double yf) {
+bool Graph::codigo_do_luca(std::complex<double> const& c, double x0, double y0, double xf, double yf, bool coloca) {
     auto x = real(c);
     auto y = imag(c);
 
@@ -291,7 +290,8 @@ bool Graph::codigo_do_luca(std::complex<double> const& c, double x0, double y0, 
     }
     if (_collision[i][j])
         return true;
-    _collision[i][j] = true;
+    if (coloca)
+        _collision[i][j] = true;
     return false;
 }
 
@@ -308,19 +308,37 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
     double stepy = (yf - y0) / (Ny - 1);
 
-    std::pair<int, int>* pontos = new std::pair<int, int>[Nx * Ny];
-    for (int i = 0; i < Nx; i++)
-        for (int j = 0; j < Ny; j++)
-            pontos[i * Ny + j] = { i, j };
+    // std::pair<int, int>* pontos = new std::pair<int, int>[(Nx / 3) * (Ny / 3)];
+    std::vector<sf::Vector2<double>> pontos;
 
-    std::random_shuffle(pontos, pontos + Nx * Ny);
+    // int valval = 0;
+    // for (int i = 0; i < Nx; i += 3)
+    // for (int j = 0; j < Ny; j += 3)
+    // pontos[valval++] = { x0 + i * stepx, y0 + j * stepy };
+
+    // std::random_shuffle(pontos.begin(), pontos.end());
+    // std::random_shuffle(pontos, pontos + valval);
 
     double aux = (stepx * stepx + stepy * stepy) * 0.01;
-    for (int ll = 0; ll < Nx * Ny && !_terminate; ll++) {
-        int i = pontos[ll].first, j = pontos[ll].second;
+    int priority = 0;
 
-        sf::Vector2<double> p0 = { x0 + i * stepx, y0 + j * stepy };
-        sf::Vector2<double> pIni = { x0 + i * stepx, y0 + j * stepy };
+    // for (int ll = 0; ll < valval && !_terminate; ll++) {
+    while (!_terminate) {
+
+        if (pontos.empty()) {
+            if (priority > 10000)
+                break;
+            int i = rand() % Nx, j = rand() % Ny;
+            pontos.push_back({ x0 + i * stepx, y0 + j * stepy });
+            priority++;
+        } else
+            priority = 0;
+        // int i = pontos[ll].first, j = pontos[ll].second;
+        // int i = pontos.back().first, j = pontos.back().second;
+
+        sf::Vector2<double> p0 = pontos.back();
+        pontos.pop_back();
+        sf::Vector2<double> pIni = p0;
 
         double error = 1e18;
         double derivativex {}, derivativey {};
@@ -383,6 +401,69 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
             }
         }
 
+        {
+            auto paux = p + grad * std::complex<double>(0, -1);
+
+            auto derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            auto derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            std::complex<double> grad = { derivativex, derivativey };
+
+            paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            // grad = { derivativex, derivativey };
+
+            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
+                pontos.push_back({ std::real(paux), std::imag(paux) });
+        }
+
+        {
+            auto paux = p + grad;
+
+            auto derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            auto derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            std::complex<double> grad = { derivativex, derivativey };
+
+            paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            // grad = { derivativex, derivativey };
+
+            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
+                pontos.push_back({ std::real(paux), std::imag(paux) });
+        }
+
+        {
+            auto paux = p - grad;
+
+            auto derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            auto derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            std::complex<double> grad = { derivativex, derivativey };
+
+            paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            // grad = { derivativex, derivativey };
+
+            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
+                pontos.push_back({ std::real(paux), std::imag(paux) });
+        }
+
         derivativex = dx1;
         derivativey = dx2;
         p = paux;
@@ -414,38 +495,78 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
                 break;
             }
         }
+
+        {
+            auto paux = p + grad * std::complex<double>(0, -1);
+
+            auto derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            auto derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            std::complex<double> grad = { derivativex, derivativey };
+
+            paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            // grad = { derivativex, derivativey };
+
+            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
+                pontos.push_back({ std::real(paux), std::imag(paux) });
+        }
+
+        {
+            auto paux = p + grad;
+
+            auto derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            auto derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            std::complex<double> grad = { derivativex, derivativey };
+
+            paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            // grad = { derivativex, derivativey };
+
+            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
+                pontos.push_back({ std::real(paux), std::imag(paux) });
+        }
+
+        {
+            auto paux = p - grad;
+
+            auto derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            auto derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            std::complex<double> grad = { derivativex, derivativey };
+
+            paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
+            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
+
+            // grad = { derivativex, derivativey };
+
+            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+
+            if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
+                pontos.push_back({ std::real(paux), std::imag(paux) });
+        }
     }
 }
 
 //Display Function Implementation
 
 void Graph::display() {
-    static int ini = 0;
-    static int var = 0;
-    static sf::Color lineColor = _lines1[0].color;
-    for (; ini < k; ini++) {
-        float d = std::sqrt((_lines1[ini].position.x - _lines2[ini].position.x) * (_lines1[ini].position.x - _lines2[ini].position.x) + (_lines1[ini].position.y - _lines2[ini].position.y) * (_lines1[ini].position.y - _lines2[ini].position.y));
-        sf::RectangleShape line(sf::Vector2f(d, 2.5f));
-        line.setOrigin(
-            line.getLocalBounds().left + 0.5f * line.getLocalBounds().width,
-            line.getLocalBounds().top + 0.5f * line.getLocalBounds().height);
-        line.setPosition(0.5 * (_lines1[ini].position.x + _lines2[ini].position.x), 0.5 * (_lines1[ini].position.y + _lines2[ini].position.y));
-        line.setFillColor(_lines1[ini].color);
-        double theta;
-        double pi = 3.1415926535898;
-        if (_lines1[ini].position.x == _lines2[ini].position.x) {
-            theta = 90.0;
-        } else
-            theta = (180.0 / pi) * std::atan((_lines1[ini].position.y - _lines2[ini].position.y) / (_lines1[ini].position.x - _lines2[ini].position.x));
-        line.rotate(theta);
-        _plotTexture.draw(line);
-    }
-
-    _plotTexture.display();
+    _plotTexture.clear(sf::Color::Black);
 
     sf::Sprite sprite;
-
-    sprite.setTexture(_plotTexture.getTexture());
 
     sprite.setOrigin(
         sprite.getLocalBounds().left + 0.5f * sprite.getLocalBounds().width,
@@ -496,6 +617,37 @@ void Graph::display() {
 
 //Draw Function Implementation
 
+void Graph::faz() {
+    static int ini = 0;
+    static int var = 0;
+    static sf::Color lineColor = sf::Color(rand() % 256, rand() % 256, rand() % 256);
+
+    bool passou = false;
+    for (; ini < k; ini++) {
+        float d = std::sqrt((_lines1[ini].position.x - _lines2[ini].position.x) * (_lines1[ini].position.x - _lines2[ini].position.x) + (_lines1[ini].position.y - _lines2[ini].position.y) * (_lines1[ini].position.y - _lines2[ini].position.y));
+        sf::RectangleShape line(sf::Vector2f(d, 2.5f));
+        line.setOrigin(
+            line.getLocalBounds().left + 0.5f * line.getLocalBounds().width,
+            line.getLocalBounds().top + 0.5f * line.getLocalBounds().height);
+        line.setPosition(0.5 * (_lines1[ini].position.x + _lines2[ini].position.x), 0.5 * (_lines1[ini].position.y + _lines2[ini].position.y));
+        line.setFillColor(lineColor);
+        double theta;
+        double pi = 3.1415926535898;
+
+        theta = (180.0 / pi) * std::atan2((_lines1[ini].position.y - _lines2[ini].position.y), (_lines1[ini].position.x - _lines2[ini].position.x));
+        line.rotate(theta);
+        _plotTexture.draw(line);
+        passou = true;
+        // var++;
+        if (var >= 100) {
+            var = 0;
+            lineColor = sf::Color(rand() % 256, rand() % 256, rand() % 256);
+        }
+    }
+    if (passou)
+        _plotTexture.display();
+}
+
 void Graph::draw(sf::RenderTarget& target, sf::RenderStates states) const {
 
     sf::Sprite sprite;
@@ -510,6 +662,8 @@ void Graph::draw(sf::RenderTarget& target, sf::RenderStates states) const {
         _graphBox.getGlobalBounds().left,
         _graphBox.getGlobalBounds().top));
 
-    target.draw(sprite);
-    // target.draw(&_points[0], _points.size(), sf::Points);
+    // target.draw(sprite);
+
+    sf::Sprite spr(_plotTexture.getTexture());
+    target.draw(spr);
 }

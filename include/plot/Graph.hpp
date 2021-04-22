@@ -19,7 +19,7 @@ private:
     std::string _title {};
     int _fontSize {};
     int _Nx, _Ny;
-    std::atomic_bool _terminate {};
+    bool _terminate {};
     sf::Font _font {};
     sf::Text _text {};
     std::vector<sf::Text> _xScale {}, _yScale {};
@@ -27,7 +27,7 @@ private:
     sf::Vertex* _lines2;
     bool** _collision;
 
-    bool codigo_do_luca(std::complex<double> const& c, double x0, double y0, double xf, double yf);
+    bool codigo_do_luca(std::complex<double> const& c, double x0, double y0, double xf, double yf, bool coloca = true);
 
 public:
     //Constructors
@@ -83,6 +83,7 @@ public:
 
     //Draw Function
 
+    void faz();
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 };
 

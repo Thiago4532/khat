@@ -29,7 +29,7 @@ int main() {
 
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Teste",
         sf::Style::Close | sf::Style::Fullscreen);
-    window.setVerticalSyncEnabled(true);
+    window.setFramerateLimit(60);
 
     sf::Font font;
     font.loadFromFile("resources/Roboto.ttf");
@@ -52,6 +52,8 @@ int main() {
     });
 
     // thr.join();
+    myGraph.display();
+
     while (window.isOpen()) {
         sf::Event event;
 
@@ -59,13 +61,13 @@ int main() {
             if (event.type == sf::Event::Closed) {
                 window.close();
                 myGraph.terminate();
-                thr.join();
+                // thr.join();
                 return 0;
             }
         }
 
-        myGraph.display();
         window.clear(sf::Color::Black);
+        myGraph.faz();
         window.draw(myGraph);
         window.display();
     }
