@@ -295,7 +295,7 @@ bool Graph::codigo_do_luca(std::complex<double> const& c, double x0, double y0, 
     return false;
 }
 
-void Graph::plotRelation(const std::function<double(double, double)>& f, const sf::Color& color) {
+void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
     int Nx = _Nx, Ny = _Ny;
     std::vector<sf::Vector2f> data {};
 
@@ -308,16 +308,7 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
 
     double stepy = (yf - y0) / (Ny - 1);
 
-    // std::pair<int, int>* pontos = new std::pair<int, int>[(Nx / 3) * (Ny / 3)];
     std::vector<sf::Vector2<double>> pontos;
-
-    // int valval = 0;
-    // for (int i = 0; i < Nx; i += 3)
-    // for (int j = 0; j < Ny; j += 3)
-    // pontos[valval++] = { x0 + i * stepx, y0 + j * stepy };
-
-    // std::random_shuffle(pontos.begin(), pontos.end());
-    // std::random_shuffle(pontos, pontos + valval);
 
     double aux = (stepx * stepx + stepy * stepy) * 0.01;
     int priority = 0;
@@ -350,7 +341,7 @@ void Graph::plotRelation(const std::function<double(double, double)>& f, const s
             derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
 
             modulo = derivativex * derivativex + derivativey * derivativey;
-            if (modulo * aux >= error and it > 25)
+            if (modulo * aux >= error && it > 25)
                 break;
 
             sf::Vector2<double> p = p0 - sf::Vector2<double>(derivativex, derivativey) * f(p0.x, p0.y) / (derivativey * derivativey + derivativex * derivativex);
@@ -623,7 +614,9 @@ void Graph::faz() {
     static sf::Color lineColor = sf::Color(rand() % 256, rand() % 256, rand() % 256);
 
     bool passou = false;
-    for (; ini < k; ini++) {
+
+    int x = k;
+    for (; ini < x; ini++) {
         float d = std::sqrt((_lines1[ini].position.x - _lines2[ini].position.x) * (_lines1[ini].position.x - _lines2[ini].position.x) + (_lines1[ini].position.y - _lines2[ini].position.y) * (_lines1[ini].position.y - _lines2[ini].position.y));
         sf::RectangleShape line(sf::Vector2f(d, 2.5f));
         line.setOrigin(
@@ -650,20 +643,20 @@ void Graph::faz() {
 
 void Graph::draw(sf::RenderTarget& target, sf::RenderStates states) const {
 
-    sf::Sprite sprite;
+    // sf::Sprite sprite;
 
-    sprite.setTexture(_graphTexture.getTexture());
+    // sprite.setTexture(_graphTexture.getTexture());
 
-    sprite.setOrigin(
-        sprite.getLocalBounds().left,
-        sprite.getLocalBounds().top);
+    // sprite.setOrigin(
+    //     sprite.getLocalBounds().left,
+    //     sprite.getLocalBounds().top);
 
-    sprite.setPosition(sf::Vector2f(
-        _graphBox.getGlobalBounds().left,
-        _graphBox.getGlobalBounds().top));
+    // sprite.setPosition(sf::Vector2f(
+    //     _graphBox.getGlobalBounds().left,
+    //     _graphBox.getGlobalBounds().top));
 
     // target.draw(sprite);
 
-    sf::Sprite spr(_plotTexture.getTexture());
-    target.draw(spr);
+    sf::Sprite _sprite(_plotTexture.getTexture());
+    target.draw(_sprite);
 }

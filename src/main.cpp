@@ -1,12 +1,19 @@
-#include <cmath>
-
-#include <SFML/Graphics.hpp>
-#include <iostream>
-#include <thread>
-
 #include "Parser.h"
+#include "fmt/core.h"
+#include "nix/dynamic_loader.hpp"
+#include "nix/stdlib.hpp"
+#include "nix/tempfile.hpp"
+#include "nix/unistd.hpp"
 #include "plot/Graph.hpp"
-#include <cerrno>
+#include <SFML/Graphics.hpp>
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <thread>
 #include <unistd.h>
 
 int main() {
@@ -15,21 +22,47 @@ int main() {
     std::getline(std::cin, input);
     Lexer lexer(input);
     Parser parser(lexer);
-    auto f = [&parser](double x, double y) -> double {
-        errno = 0;
-        auto calc = parser.evaluate(x, y);
-        if (errno != 0)
-            return NAN;
 
-        return calc;
-    };
+    std::string s = parser.eval() + ';';
+    fmt::print("{}\n", s);
+
+    auto pipefd = nix::fpipe();
+
+    fmt::print(pipefd.fp_write(), "#include <math.h>\ndouble sum(double x, double y) {{ return {}; }}", s);
+    nix::fclose(pipefd.fp_write());
+
+    nix::tempfile temp("/tmp/main_XXXXXX");
+    pid_t pid = nix::fork([&]() {
+        nix::dup2(pipefd.fd_read(), STDIN_FILENO);
+        nix::execv("/usr/bin/gcc", { "gcc", "-o", temp, "-x", "c", "-", "--shared", "-O2", "-lm", "-Wl,--as-needed" });
+    });
+    nix::fclose(pipefd.fp_read());
+
+    int status;
+    nix::wait(status);
+    if (!WIFEXITED(status)) {
+        fmt::print(stderr, "gcc has not terminated correctly!\n");
+        fmt::print(stderr, "Status: {}\n", status);
+        return 1;
+    }
+
+    status = WEXITSTATUS(status);
+    if (status != 0)
+        return status;
+
+    nix::dynamic_loader dll(temp);
+    auto func = reinterpret_cast<double (*)(double, double)>(dll("sum"));
 
     float a, b, c, d;
     std::cin >> a >> b >> c >> d;
 
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Teste",
         sf::Style::Close | sf::Style::Fullscreen);
-    window.setFramerateLimit(60);
+    window.setVerticalSyncEnabled(true);
+    window.setPosition({ 460, 0 });
+
+    window.clear(sf::Color::Black);
+    window.display();
 
     sf::Font font;
     font.loadFromFile("resources/Roboto.ttf");
@@ -48,7 +81,7 @@ int main() {
     myGraph.plotClear(sf::Color::Black);
 
     std::thread thr([&] {
-        myGraph.plotRelation(f, sf::Color(255, 64, 64));
+        myGraph.plotRelation(func, sf::Color(255, 64, 64));
     });
 
     // thr.join();
@@ -61,7 +94,7 @@ int main() {
             if (event.type == sf::Event::Closed) {
                 window.close();
                 myGraph.terminate();
-                // thr.join();
+                thr.join();
                 return 0;
             }
         }
@@ -74,39 +107,9 @@ int main() {
 
     myGraph.terminate();
     thr.join();
+
+    // double x, y;
+    // scanf("%lf %lf", &x, &y);
+    // printf("%lf\n", func(x, y));
+    return 0;
 }
-
-// #include <iostream>
-// #include <vector>
-
-// #include "Functions.h"
-// #include "Lexer.h"
-// #include "Parser.h"
-// #include "aux.h"
-
-// using namespace std;
-
-// ostream& operator<<(ostream& out, Parser const& p) {
-//     out << p.getToken();
-//     for (auto const& e : p.getChildren())
-//         out << " " << e;
-//     return out;
-// }
-
-// int main(int, char**) {
-//     std::string in;
-//     getline(cin, in);
-//     Lexer lex(in);
-
-//     cout << "Lexer:" << endl;
-//     for (auto e : lex)
-//         cout << e << " ";
-//     cout << endl;
-
-//     Parser p(lex);
-//     cout << "Parser:" << endl;
-//     cout << p << endl;
-//     double x, y;
-//     cin >> x >> y;
-//     std::cout << p.evaluate(x, y) << std::endl;
-// }

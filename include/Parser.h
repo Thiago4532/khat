@@ -18,6 +18,7 @@ public:
 
     double evaluate(double x) const;
     double evaluate(double x, double y) const;
+    std::string eval() const;
 
 private:
     Token _token;

@@ -91,8 +91,8 @@ void Parser::_build(std::vector<Token>& rpn) {
             break;
 
         default: // function or unary operators
-            if (Functions::unaries.count(*_token.name) == 0)
-                throw std::runtime_error("invalid function name!");
+            // if (Functions::unaries.count(*_token.name) == 0
+            //     throw std::runtime_error("invalid )function name!");
 
             this->_children.resize(1);
             this->_children[0]._build(rpn);
@@ -128,6 +128,37 @@ double Parser::evaluate(double x, double y) const {
         case TokenType::OP_NEGATIVE:
         case TokenType::FUNCTION:
             return Functions::unaries[*_token.name](_children[0].evaluate(x, y));
+
+        default:
+            throw std::runtime_error("como?");
+    }
+}
+
+std::string Parser::eval() const {
+    std::string ans;
+    switch (_token.type) {
+        case TokenType::VARIABLE:
+            return "x";
+        case TokenType::VARIABLE_Y:
+            return "y";
+        case TokenType::NUMBER:
+            return *_token.name;
+
+        case TokenType::OP_PLUS:
+            return _children[0].eval() + "+" + _children[1].eval();
+        case TokenType::OP_MINUS:
+            return _children[0].eval() + "-" + _children[1].eval();
+        case TokenType::OP_PRODUCT:
+            return _children[0].eval() + "*" + _children[1].eval();
+        case TokenType::OP_DIVIDE:
+            return _children[0].eval() + "/" + _children[1].eval();
+        case TokenType::OP_POWER:
+            return "pow(" + _children[0].eval() + ", " + _children[1].eval() + ")";
+
+        case TokenType::OP_POSITIVE:
+        case TokenType::OP_NEGATIVE:
+        case TokenType::FUNCTION:
+            return *_token.name + "(" + _children[0].eval() + ")";
 
         default:
             throw std::runtime_error("como?");
