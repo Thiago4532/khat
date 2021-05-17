@@ -23,15 +23,16 @@ int main() {
     Lexer lexer(input);
     Parser parser(lexer);
 
-    std::string s = parser.eval() + ';';
-    fmt::print("{}\n", s);
+    std::string eval = parser.eval();
+    fmt::print("{}\n", eval);
 
     nix::pipe pipe;
 
-    fmt::print(pipe(1), "#include <math.h>\ndouble sum(double x, double y) {{ return {}; }}", s);
+    fmt::print(pipe(1), "#include <math.h>\ndouble sum(double x, double y) {{ return {}; }}", eval);
     fclose(pipe(1));
 
     nix::tempfile temp("/tmp/main_XXXXXX");
+
     pid_t pid = nix::fork([&]() {
         nix::dup(pipe[0], STDIN_FILENO);
         nix::execv("/usr/bin/gcc", { "gcc", "-o", temp, "-x", "c", "-", "--shared", "-O2", "-lm", "-Wl,--as-needed" });
