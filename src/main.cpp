@@ -1,9 +1,9 @@
 #include "Parser.h"
 #include "fmt/core.h"
 #include "nix/dynamic_loader.hpp"
-#include "nix/stdlib.hpp"
 #include "nix/tempfile.hpp"
-#include "nix/unistd.hpp"
+#include "nix/fork.hpp"
+#include "nix/pipe.hpp"
 #include "plot/Graph.hpp"
 #include <SFML/Graphics.hpp>
 #include <cmath>
@@ -26,17 +26,17 @@ int main() {
     std::string s = parser.eval() + ';';
     fmt::print("{}\n", s);
 
-    auto pipefd = nix::fpipe();
+    nix::pipe pipe;
 
-    fmt::print(pipefd.fp_write(), "#include <math.h>\ndouble sum(double x, double y) {{ return {}; }}", s);
-    nix::fclose(pipefd.fp_write());
+    fmt::print(pipe(1), "#include <math.h>\ndouble sum(double x, double y) {{ return {}; }}", s);
+    fclose(pipe(1));
 
     nix::tempfile temp("/tmp/main_XXXXXX");
     pid_t pid = nix::fork([&]() {
-        nix::dup2(pipefd.fd_read(), STDIN_FILENO);
+        nix::dup(pipe[0], STDIN_FILENO);
         nix::execv("/usr/bin/gcc", { "gcc", "-o", temp, "-x", "c", "-", "--shared", "-O2", "-lm", "-Wl,--as-needed" });
     });
-    nix::fclose(pipefd.fp_read());
+    fclose(pipe(0));
 
     int status;
     nix::wait(status);

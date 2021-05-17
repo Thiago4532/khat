@@ -9,11 +9,9 @@ add_subdirectory(fmt)
 # set(CMAKE_CXX_FLAGS "-O2")
 
 set(SOURCES
-    src/nix/stdio.cpp
-    src/nix/stdlib.cpp
     src/nix/tempfile.cpp
-    src/nix/unistd.cpp
-    src/nix/dlfcn.cpp
+    src/nix/fork.cpp
+    src/nix/pipe.cpp
     src/nix/dynamic_loader.cpp
     src/plot/Graph.cpp
     src/Functions.cpp
