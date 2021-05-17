@@ -3,12 +3,12 @@
 #include <unistd.h>
 #include <cerrno>
 #include <cstring>
-#include <sys/wait.h>
 #include <system_error>
+#include <sys/wait.h>
 
 namespace nix {
 
-pid_t fork() {
+pid_t fork::c() {
     pid_t ret = ::fork();
     if (ret == -1)
         throw std::system_error(errno, std::generic_category(), "dup2");
@@ -26,20 +26,20 @@ void execv(std::string const& path, std::initializer_list<std::string> args) {
     ::execv(path.c_str(), argv);
 }
 
-pid_t wait() {
-    pid_t ret = ::wait(NULL);
+// pid_t wait() {
+//     pid_t ret = ::wait(NULL);
 
-    if (ret == -1)
-        throw std::system_error(errno, std::generic_category(), "wait");
-    return ret;
-}
+//     if (ret == -1)
+//         throw std::system_error(errno, std::generic_category(), "wait");
+//     return ret;
+// }
 
-pid_t wait(int& status) {
-    pid_t ret = ::wait(&status);
+// pid_t wait(int& status) {
+//     pid_t ret = ::wait(&status);
 
-    if (ret == -1)
-        throw std::system_error(errno, std::generic_category(), "wait");
-    return ret;
-}
+//     if (ret == -1)
+//         throw std::system_error(errno, std::generic_category(), "wait");
+//     return ret;
+// }
 
 }

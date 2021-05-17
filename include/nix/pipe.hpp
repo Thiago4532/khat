@@ -5,6 +5,12 @@
 
 namespace nix {
 
+struct fileno {
+    static constexpr int stdin = 0;
+    static constexpr int stdout = 1;
+    static constexpr int stderr = 2;
+};
+
 class pipe {
 public:
     pipe();

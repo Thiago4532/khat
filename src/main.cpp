@@ -7,17 +7,13 @@
 #include "plot/Graph.hpp"
 #include <SFML/Graphics.hpp>
 #include <cmath>
-#include <fstream>
 #include <iostream>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
 #include <thread>
-#include <unistd.h>
+#include <random>
+
+std::mt19937 __gen__(std::random_device{}());
 
 int main() {
-    srand(time(0));
     std::string input;
     std::getline(std::cin, input);
     Lexer lexer(input);
@@ -27,20 +23,19 @@ int main() {
     fmt::print("{}\n", eval);
 
     nix::pipe pipe;
-
     fmt::print(pipe(1), "#include <math.h>\ndouble sum(double x, double y) {{ return {}; }}", eval);
     fclose(pipe(1));
 
     nix::tempfile temp("/tmp/main_XXXXXX");
 
-    pid_t pid = nix::fork([&]() {
-        nix::dup(pipe[0], STDIN_FILENO);
+    nix::fork gcc([&]() {
+        nix::dup(pipe[0], nix::fileno::stdin);
         nix::execv("/usr/bin/gcc", { "gcc", "-o", temp, "-x", "c", "-", "--shared", "-O2", "-lm", "-Wl,--as-needed" });
     });
+    pid_t pid = gcc.pid();
     fclose(pipe(0));
 
-    int status;
-    nix::wait(status);
+    int status = gcc.wait();
     if (!WIFEXITED(status)) {
         fmt::print(stderr, "gcc has not terminated correctly!\n");
         fmt::print(stderr, "Status: {}\n", status);
@@ -85,7 +80,6 @@ int main() {
         myGraph.plotRelation(func, sf::Color(255, 64, 64));
     });
 
-    // thr.join();
     myGraph.display();
 
     while (window.isOpen()) {

@@ -13,6 +13,7 @@ set(SOURCES
     src/nix/fork.cpp
     src/nix/pipe.cpp
     src/nix/dynamic_loader.cpp
+    src/rng.cpp
     src/plot/Graph.cpp
     src/Functions.cpp
     src/aux.cpp

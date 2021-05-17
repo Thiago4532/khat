@@ -4,6 +4,8 @@
 #include <cstring>
 #include <iostream>
 #include <queue>
+#include <random>
+#include "rng.hpp"
 
 //Setters Implementations
 
@@ -283,7 +285,6 @@ bool Graph::codigo_do_luca(std::complex<double> const& c, double x0, double y0, 
                 continue;
 
             if (_collision[i2][j2]) {
-                // _collision[i][j] = true;
                 return true;
             }
         }
@@ -315,11 +316,10 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
 
     // for (int ll = 0; ll < valval && !_terminate; ll++) {
     while (!_terminate) {
-
         if (pontos.empty()) {
             if (priority > 10000)
                 break;
-            int i = rand() % Nx, j = rand() % Ny;
+            int i = rng() % Nx, j = rng() % Ny;
             pontos.push_back({ x0 + i * stepx, y0 + j * stepy });
             priority++;
         } else
@@ -611,7 +611,7 @@ void Graph::display() {
 void Graph::faz() {
     static int ini = 0;
     static int var = 0;
-    static sf::Color lineColor = sf::Color(rand() % 256, rand() % 256, rand() % 256);
+    static sf::Color lineColor = sf::Color(rng() % 256, rng() % 256, rng() % 256);
 
     bool passou = false;
 
@@ -634,7 +634,7 @@ void Graph::faz() {
         // var++;
         if (var >= 100) {
             var = 0;
-            lineColor = sf::Color(rand() % 256, rand() % 256, rand() % 256);
+            lineColor = sf::Color(rng() % 256, rng() % 256, rng() % 256);
         }
     }
     if (passou)
