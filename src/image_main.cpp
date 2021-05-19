@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
     std::cin >> a >> b >> c >> d;
 
     sf::Font font;
-    font.loadFromFile("resources/Roboto.ttf");
+    // font.loadFromFile("resources/Roboto.ttf");
 
     std::string title = input + " = 0";
 
