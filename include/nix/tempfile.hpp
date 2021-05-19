@@ -15,6 +15,7 @@ public:
 
 private:
     int _fd;
+    bool _alive;
 };
 
 }

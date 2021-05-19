@@ -1,11 +1,11 @@
 #include "plot/Graph.hpp"
+#include "rng.hpp"
 #include <cerrno>
 #include <complex>
 #include <cstring>
 #include <iostream>
 #include <queue>
 #include <random>
-#include "rng.hpp"
 
 //Setters Implementations
 
@@ -297,6 +297,9 @@ bool Graph::codigo_do_luca(std::complex<double> const& c, double x0, double y0, 
 }
 
 void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
+    // sf::Clock clock;
+    constexpr int IT_LIMIT = 2000;
+
     int Nx = _Nx, Ny = _Ny;
     std::vector<sf::Vector2f> data {};
 
@@ -337,6 +340,9 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
         double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
 
         for (int it = 0; !_terminate; it++) {
+            if (it >= IT_LIMIT)
+                throw std::runtime_error("plot: Iteration limit exceeded!");
+
             derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
             derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
 
@@ -350,9 +356,6 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
 
             p0 = p;
         }
-
-        if (std::isnan(f(p0.x, p0.y)))
-            continue;
 
         std::complex<double> p = { p0.x, p0.y };
         if (codigo_do_luca(p, x0, y0, xf, yf)) {
@@ -370,9 +373,6 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
             auto dir = (grad / std::abs(grad)) * std::complex<double>(0, -1) * step;
             auto p1 = p;
             p += dir;
-
-            if (std::isnan(f(real(p), imag(p))))
-                break;
 
             derivativex = (f(std::real(p) + e, std::imag(p)) - f(std::real(p), std::imag(p))) / e;
             derivativey = (f(std::real(p), std::imag(p) + e) - f(std::real(p), std::imag(p))) / e;
@@ -465,9 +465,6 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
             auto dir = (grad / std::abs(grad)) * std::complex<double>(0, 1) * step;
             auto p1 = p;
             p += dir;
-
-            if (std::isnan(f(real(p), imag(p))))
-                break;
 
             derivativex = (f(std::real(p) + e, std::imag(p)) - f(std::real(p), std::imag(p))) / e;
             derivativey = (f(std::real(p), std::imag(p) + e) - f(std::real(p), std::imag(p))) / e;

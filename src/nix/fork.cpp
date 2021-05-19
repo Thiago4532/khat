@@ -1,17 +1,25 @@
 #include "nix/fork.hpp"
 
-#include <unistd.h>
 #include <cerrno>
 #include <cstring>
-#include <system_error>
 #include <sys/wait.h>
+#include <system_error>
+#include <unistd.h>
 
 namespace nix {
+
+int fork::wait() {
+    if (_status != -1)
+        return _status;
+
+    ::waitpid(_pid, &_status, 0);
+    return _status;
+}
 
 pid_t fork::c() {
     pid_t ret = ::fork();
     if (ret == -1)
-        throw std::system_error(errno, std::generic_category(), "dup2");
+        throw std::system_error(errno, std::generic_category(), "fork");
     return ret;
 }
 

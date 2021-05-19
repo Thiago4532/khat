@@ -10,15 +10,10 @@
 #include <iostream>
 #include <random>
 
-#if defined(KHAT_SINGLETHREAD)
-#include "util/useless_thread.hpp"
-using thread = useless_thread;
-#else
-#include <thread>
-using thread = std::thread;
-#endif
+int main(int argc, char* argv[]) {
+    if (argc <= 1)
+        return 1;
 
-int main() {
     std::string input;
     std::getline(std::cin, input);
     Lexer lexer(input);
@@ -57,14 +52,6 @@ int main() {
     float a, b, c, d;
     std::cin >> a >> b >> c >> d;
 
-    sf::RenderWindow window(sf::VideoMode(1920, 1080), "Teste",
-        sf::Style::Close | sf::Style::Fullscreen);
-    window.setVerticalSyncEnabled(true);
-    window.setPosition({ 460, 0 });
-
-    window.clear(sf::Color::Black);
-    window.display();
-
     sf::Font font;
     font.loadFromFile("resources/Roboto.ttf");
 
@@ -80,32 +67,17 @@ int main() {
         title, 30, font);
 
     myGraph.plotClear(sf::Color::Black);
-
-    thread thr([&] {
-        myGraph.plotRelation(func, sf::Color(255, 64, 64));
-    });
-
+    myGraph.plotRelation(func, sf::Color(255, 64, 64));
     myGraph.display();
 
-    while (window.isOpen()) {
-        sf::Event event;
+    sf::RenderTexture rtexture;
+    rtexture.create(1920, 1080);
 
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
-                window.close();
-                myGraph.terminate();
-                thr.join();
-                return 0;
-            }
-        }
+    rtexture.clear(sf::Color::Black);
+    myGraph.faz();
+    rtexture.draw(myGraph);
+    rtexture.display();
 
-        window.clear(sf::Color::Black);
-        myGraph.faz();
-        window.draw(myGraph);
-        window.display();
-    }
-
-    myGraph.terminate();
-    thr.join();
+    rtexture.getTexture().copyToImage().saveToFile(argv[1]);
     return 0;
 }

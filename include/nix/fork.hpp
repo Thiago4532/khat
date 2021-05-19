@@ -3,15 +3,17 @@
 
 #include <cstdio>
 #include <string>
-#include <utility>
 #include <sys/wait.h>
+#include <utility>
 
 namespace nix {
 
 class fork {
 public:
     template <typename __Function>
-    fork(__Function child) : _status(-1), _pid(c()) {
+    fork(__Function child)
+        : _status(-1)
+        , _pid(c()) {
         if (_pid == 0) {
             child();
             exit(EXIT_SUCCESS);
@@ -19,13 +21,7 @@ public:
     }
 
     int pid() const { return _pid; }
-    int wait() { 
-        if (_status != -1)
-            return _status;
-        
-        ::waitpid(_pid, &_status, 0);
-        return _status;
-    }
+    int wait();
 
     static pid_t c();
 

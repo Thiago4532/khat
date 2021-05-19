@@ -17,6 +17,7 @@ public:
 
     std::FILE* operator()(int fd);
     int operator[](int fd);
+
 private:
     int _fd[2];
     std::FILE* _f[2];
