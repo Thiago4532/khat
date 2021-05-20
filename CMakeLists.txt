@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(IMAGE_EXPORT ON)
 
 add_subdirectory(fmt)
-# set(CMAKE_CXX_FLAGS "-O2")
+#set(CMAKE_CXX_FLAGS "-O2")
 
 if (IMAGE_EXPORT)
     message("-- Image mode.")
@@ -37,9 +37,6 @@ set(SOURCES
 
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 find_package(fmt)
-
-include(CTest)
-enable_testing()
 
 add_executable(MathParser ${SOURCES})
 target_include_directories(MathParser
