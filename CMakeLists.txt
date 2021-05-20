@@ -9,7 +9,7 @@ add_subdirectory(fmt)
 # set(CMAKE_CXX_FLAGS "-O2")
 
 if (IMAGE_EXPORT)
-    message("Image mode.")
+    message("-- Image mode.")
     set(MAIN_SOURCE src/image_main.cpp)
     set(SINGLE_THREAD ON)
 else()
@@ -55,7 +55,7 @@ target_link_libraries(MathParser
 )
 
 if (SINGLE_THREAD)
-    message("No Multithreading!")
+    message("-- No Multithreading!")
     set_property(
         SOURCE ${MAIN_SOURCE}
         PROPERTY COMPILE_DEFINITIONS KHAT_SINGLETHREAD
