@@ -78,6 +78,6 @@ int main(int argc, char* argv[]) {
     rtexture.draw(myGraph);
     rtexture.display();
 
-    rtexture.getTexture().copyToImage().saveToFile(argv[1]);
-    return 0;
+    bool saveStatus = rtexture.getTexture().copyToImage().saveToFile(argv[1]);
+    return !saveStatus;
 }

@@ -340,8 +340,8 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
         double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
 
         for (int it = 0; !_terminate; it++) {
-            if (it >= IT_LIMIT)
-                throw std::runtime_error("plot: Iteration limit exceeded!");
+            // if (it >= IT_LIMIT)
+            //     throw std::runtime_error("plot: Iteration limit exceeded!");
 
             derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
             derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
@@ -608,7 +608,7 @@ void Graph::display() {
 void Graph::faz() {
     static int ini = 0;
     static int var = 0;
-    static sf::Color lineColor = sf::Color(rng() % 256, rng() % 256, rng() % 256);
+    static sf::Color lineColor = sf::Color(0, 255, 255);
 
     bool passou = false;
 
