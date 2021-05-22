@@ -3,7 +3,7 @@ project(MathParser VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 # set(SINGLE_THREAD ON)
-set(IMAGE_EXPORT ON)
+# set(IMAGE_EXPORT ON)
 
 add_subdirectory(fmt)
 #set(CMAKE_CXX_FLAGS "-O2")

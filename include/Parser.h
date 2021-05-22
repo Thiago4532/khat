@@ -14,7 +14,8 @@ public:
     double operator[](double x) const;
 
     Token const& getToken() const;
-    std::vector<Parser> const& getChildren() const;
+
+    static void simplify(Parser*& parser);
 
     double evaluate(double x) const;
     double evaluate(double x, double y) const;
@@ -22,8 +23,10 @@ public:
 
 private:
     Token _token;
-    std::vector<Parser> _children;
+    std::vector<Parser*> _children;
+    Parser* _parent;
+    int _kidIndex;
     std::optional<double> _double;
-    void _build(std::vector<Token>& rpn);
+    static Parser* _build(std::vector<Token>& rpn);
 };
 #endif
