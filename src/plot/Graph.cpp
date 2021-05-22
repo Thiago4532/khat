@@ -337,9 +337,6 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
         double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
 
         for (int it = 0; !_terminate; it++) {
-            // if (it >= IT_LIMIT)
-            //     throw std::runtime_error("plot: Iteration limit exceeded!");
-
             derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
             derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
 
@@ -353,6 +350,8 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
 
             p0 = p;
         }
+        if (_terminate)
+            break;
 
         std::complex<double> p = { p0.x, p0.y };
         if (codigo_do_luca(p, x0, y0, xf, yf)) {
@@ -366,7 +365,7 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
         std::complex<double> grad = { derivativex, derivativey };
 
         double step = (stepx + stepy) / 4.0;
-        while (!_terminate) {
+        while (true) {
             auto dir = (grad / std::abs(grad)) * std::complex<double>(0, -1) * step;
             auto p1 = p;
             p += dir;
@@ -444,7 +443,7 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
 
         grad = { derivativex, derivativey };
 
-        while (!_terminate) {
+        while (true) {
             auto dir = (grad / std::abs(grad)) * std::complex<double>(0, 1) * step;
             auto p1 = p;
             p += dir;

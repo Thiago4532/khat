@@ -19,7 +19,7 @@ private:
     std::string _title {};
     int _fontSize {};
     int _Nx, _Ny;
-    bool _terminate {};
+    std::atomic_bool _terminate {};
     sf::Font _font {};
     sf::Text _text {};
     std::vector<sf::Text> _xScale {}, _yScale {};
