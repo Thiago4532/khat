@@ -221,9 +221,6 @@ static sf::Clock clock2;
 void Graph::plotLine(const sf::Vector2f& startPoint, const sf::Vector2f& endPoint, const sf::Color& color) {
     sf::Vector2f realStartPoint = convertPoint(startPoint), realEndPoint = convertPoint(endPoint);
 
-    // while (clock2.getElapsedTime().asMilliseconds() < 1) { }
-    // clock2.restart();
-
     _lines1[k] = { realStartPoint, color };
     _lines2[k++] = { realEndPoint, color };
 }
@@ -340,9 +337,6 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
         double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
 
         for (int it = 0; !_terminate; it++) {
-            // if (it >= IT_LIMIT)
-            //     throw std::runtime_error("plot: Iteration limit exceeded!");
-
             derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
             derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
 
@@ -356,6 +350,8 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
 
             p0 = p;
         }
+        if (_terminate)
+            break;
 
         std::complex<double> p = { p0.x, p0.y };
         if (codigo_do_luca(p, x0, y0, xf, yf)) {
@@ -369,7 +365,7 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
         std::complex<double> grad = { derivativex, derivativey };
 
         double step = (stepx + stepy) / 4.0;
-        while (!_terminate) {
+        while (true) {
             auto dir = (grad / std::abs(grad)) * std::complex<double>(0, -1) * step;
             auto p1 = p;
             p += dir;
@@ -423,13 +419,6 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
 
             paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
 
-            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
-            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
-
-            // grad = { derivativex, derivativey };
-
-            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
-
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({ std::real(paux), std::imag(paux) });
         }
@@ -444,13 +433,6 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
 
             paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
 
-            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
-            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
-
-            // grad = { derivativex, derivativey };
-
-            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
-
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({ std::real(paux), std::imag(paux) });
         }
@@ -461,7 +443,7 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
 
         grad = { derivativex, derivativey };
 
-        while (!_terminate) {
+        while (true) {
             auto dir = (grad / std::abs(grad)) * std::complex<double>(0, 1) * step;
             auto p1 = p;
             p += dir;
@@ -494,13 +476,6 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
 
             paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
 
-            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
-            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
-
-            // grad = { derivativex, derivativey };
-
-            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
-
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({ std::real(paux), std::imag(paux) });
         }
@@ -515,13 +490,6 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
 
             paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
 
-            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
-            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
-
-            // grad = { derivativex, derivativey };
-
-            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
-
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({ std::real(paux), std::imag(paux) });
         }
@@ -535,13 +503,6 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
             std::complex<double> grad = { derivativex, derivativey };
 
             paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
-
-            // derivativex = (f(std::real(paux) + e, std::imag(paux)) - f(std::real(paux), std::imag(paux))) / e;
-            // derivativey = (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux), std::imag(paux))) / e;
-
-            // grad = { derivativex, derivativey };
-
-            // paux -= grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
 
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({ std::real(paux), std::imag(paux) });

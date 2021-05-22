@@ -46,7 +46,6 @@ target_include_directories(MathParser
 target_link_libraries(MathParser
     fmt::fmt
     sfml-graphics
-    sfml-window
     sfml-system
     dl
 )
