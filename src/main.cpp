@@ -22,9 +22,14 @@ int main() {
     std::string input;
     std::getline(std::cin, input);
     Lexer lexer(input);
-    Parser parser(lexer);
+    Parser* parser = new Parser(lexer);
 
-    std::string eval = parser.eval();
+    std::string eval = parser->eval();
+    fmt::print("{}\n", eval);
+
+    Parser::simplify(parser);
+    fmt::print("Teste\n");
+    eval = parser->eval();
     fmt::print("{}\n", eval);
 
     nix::pipe pipe;
@@ -39,7 +44,6 @@ int main() {
     });
     pid_t pid = gcc.pid();
     fclose(pipe(0));
-
     int status = gcc.wait();
     if (!WIFEXITED(status)) {
         fmt::print(stderr, "gcc has not terminated correctly!\n");
@@ -57,10 +61,10 @@ int main() {
     float a, b, c, d;
     std::cin >> a >> b >> c >> d;
 
-    sf::RenderWindow window(sf::VideoMode(1920, 1080), "Teste",
-        sf::Style::Close | sf::Style::Fullscreen);
+    sf::RenderWindow window(sf::VideoMode(1000, 1000), "Teste",
+        sf::Style::Close | sf::Style::Titlebar);
     window.setVerticalSyncEnabled(true);
-    window.setPosition({ 460, 0 });
+    window.setPosition({ 0, 0 });
 
     window.clear(sf::Color::Black);
     window.display();
@@ -70,10 +74,10 @@ int main() {
 
     std::string title = input + " = 0";
 
-    sf::RectangleShape graphRect(sf::Vector2f(1920, 1080));
+    sf::RectangleShape graphRect(sf::Vector2f(1000, 1080));
     graphRect.setPosition(sf::Vector2f(0, 0));
 
-    sf::RectangleShape plotRect(sf::Vector2f(1920, 1080));
+    sf::RectangleShape plotRect(sf::Vector2f(1000, 1000));
     plotRect.setPosition(sf::Vector2f(0, 0));
 
     Graph myGraph(graphRect, plotRect, sf::Vector2f(a, b), sf::Vector2f(c, d),
