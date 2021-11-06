@@ -59,7 +59,7 @@ int main() {
     float a, b, c, d;
     std::cin >> a >> b >> c >> d;
 
-    sf::RenderWindow window(sf::VideoMode(1000, 1000), "Teste",
+    sf::RenderWindow window(sf::VideoMode(1000, 1000), "Khat",
         sf::Style::Close | sf::Style::Titlebar);
     window.setVerticalSyncEnabled(true);
     window.setPosition({ 0, 0 });
