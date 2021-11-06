@@ -3,18 +3,9 @@ project(MathParser VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 # set(SINGLE_THREAD ON)
-# set(IMAGE_EXPORT ON)
 
 add_subdirectory(fmt)
 #set(CMAKE_CXX_FLAGS "-O2")
-
-if (IMAGE_EXPORT)
-    message("-- Image mode.")
-    set(MAIN_SOURCE src/image_main.cpp)
-    set(SINGLE_THREAD ON)
-else()
-    set(MAIN_SOURCE src/main.cpp)
-endif()
 
 set(NIX_SOURCES
     src/nix/tempfile.cpp
@@ -32,7 +23,7 @@ set(SOURCES
     src/Precedence.cpp
     src/Lexer.cpp
     src/Parser.cpp
-    ${MAIN_SOURCE}
+    src/main.cpp
 )
 
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
@@ -53,7 +44,7 @@ target_link_libraries(MathParser
 if (SINGLE_THREAD)
     message("-- No Multithreading!")
     set_property(
-        SOURCE ${MAIN_SOURCE}
+        SOURCE src/main.cpp
         PROPERTY COMPILE_DEFINITIONS KHAT_SINGLETHREAD
     )
 endif()
