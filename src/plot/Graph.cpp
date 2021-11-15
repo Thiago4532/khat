@@ -33,8 +33,8 @@ void Graph::setPlotBox(const sf::RectangleShape& plotBox) {
     _Nx = _plotTexture.getTexture().getSize().x;
     _Ny = _plotTexture.getTexture().getSize().y;
 
-    _lines1 = new sf::Vertex[_Nx * _Ny];
-    _lines2 = new sf::Vertex[_Nx * _Ny];
+    _lines1 = new sf::Vertex[3 * _Nx * _Ny];
+    _lines2 = new sf::Vertex[3 * _Nx * _Ny];
 
     _collision = new bool*[_Nx * 6];
     for (int i = 0; i < _Nx * 6; i++) _collision[i] = new bool[_Ny * 6];
