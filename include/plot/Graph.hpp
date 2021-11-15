@@ -75,7 +75,9 @@ class Graph : public sf::Drawable {
     void plotPoint(const sf::Vector2f& point,
                    const sf::Color& color = sf::Color::Black);
     void plotLine(const sf::Vector2f& startPoint, const sf::Vector2f& endPoint,
-                  const sf::Color& color = sf::Color::Black);
+                  const sf::Color& color1, const sf::Color& color2);
+    void plotLine(const sf::Vector2f& startPoint, const sf::Vector2f& endPoint,
+                  const sf::Color& color);
 
     // Plot Functions
 

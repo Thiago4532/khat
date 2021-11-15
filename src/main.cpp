@@ -103,7 +103,7 @@ int main() {
 
     myGraph.plotClear(sf::Color::Black);
 
-    thread thr([&] { myGraph.plotRelation(func, funcDx, funcDy, sf::Color(255, 64, 64)); });
+    thread thr([&] { myGraph.plotRelation(func, funcDx, funcDy, sf::Color(0, 255, 255)); });
 
     myGraph.display();
 

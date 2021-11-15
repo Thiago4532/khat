@@ -1,12 +1,21 @@
 #include "plot/Graph.hpp"
 
+#include <fmt/core.h>
+
 #include <cerrno>
 #include <cmath>
 #include <complex>
 #include <cstring>
-#include <iostream>
 #include <queue>
 #include <random>
+
+#ifndef NDEBUG
+#define DEBUG(f, ...) fmt::print(stderr, f "\n", ##__VA_ARGS__)
+#else
+#define DEBUG(fmt, ...) \
+    do {                \
+    } while (0)
+#endif
 
 #include "rng.hpp"
 
@@ -33,8 +42,9 @@ void Graph::setPlotBox(const sf::RectangleShape& plotBox) {
     _Nx = _plotTexture.getTexture().getSize().x;
     _Ny = _plotTexture.getTexture().getSize().y;
 
-    _lines1 = new sf::Vertex[3 * _Nx * _Ny];
-    _lines2 = new sf::Vertex[3 * _Nx * _Ny];
+    // TODO: Fix buffer overflow
+    _lines1 = new sf::Vertex[6 * _Nx * _Ny];
+    _lines2 = new sf::Vertex[6 * _Nx * _Ny];
 
     _collision = new bool*[_Nx * 6];
     for (int i = 0; i < _Nx * 6; i++) _collision[i] = new bool[_Ny * 6];
@@ -209,12 +219,22 @@ static int k;
 static sf::Clock clock2;
 
 void Graph::plotLine(const sf::Vector2f& startPoint,
-                     const sf::Vector2f& endPoint, const sf::Color& color) {
+                     const sf::Vector2f& endPoint, const sf::Color& color1, const sf::Color& color2) {
     sf::Vector2f realStartPoint = convertPoint(startPoint),
                  realEndPoint = convertPoint(endPoint);
 
-    _lines1[k] = {realStartPoint, color};
-    _lines2[k++] = {realEndPoint, color};
+    
+    auto ponto = realEndPoint - realStartPoint;
+    auto d = (ponto.x*ponto.x + ponto.y*ponto.y);
+
+    _lines1[k] = {realStartPoint, color1};
+    _lines2[k++] = {realEndPoint, color2};
+    // DEBUG("K: {}", k);
+}
+
+void Graph::plotLine(const sf::Vector2f& startPoint,
+                     const sf::Vector2f& endPoint, const sf::Color& color) {
+    return plotLine(startPoint, endPoint, color, color);
 }
 
 // Plot Functions Implementations
@@ -261,7 +281,8 @@ bool Graph::codigo_do_luca(std::complex<double> const& c, double x0, double y0,
     auto x = real(c);
     auto y = imag(c);
 
-    if (std::isnan(x) || std::isnan(y)) return true;
+    if (std::isnan(x) || std::isnan(y))
+        return true;
 
     if (x < x0 || x > xf || y < y0 || y > yf) return true;
 
@@ -287,9 +308,6 @@ void Graph::plotRelation(double (*f)(double, double),
                          double (*fdx)(double, double),
                          double (*fdy)(double, double),
                          const sf::Color& color) {
-    // sf::Clock clock;
-    constexpr int IT_LIMIT = 2000;
-
     int Nx = _Nx, Ny = _Ny;
     std::vector<sf::Vector2f> data{};
 
@@ -305,9 +323,9 @@ void Graph::plotRelation(double (*f)(double, double),
     std::vector<sf::Vector2<double>> pontos;
 
     double aux = (stepx * stepx + stepy * stepy) * 0.01;
+    double bias = aux * 30;
     int priority = 0;
 
-    // for (int ll = 0; ll < valval && !_terminate; ll++) {
     while (!_terminate) {
         if (pontos.empty()) {
             if (priority > 10000) break;
@@ -316,8 +334,6 @@ void Graph::plotRelation(double (*f)(double, double),
             priority++;
         } else
             priority = 0;
-        // int i = pontos[ll].first, j = pontos[ll].second;
-        // int i = pontos.back().first, j = pontos.back().second;
 
         sf::Vector2<double> p0 = pontos.back();
         pontos.pop_back();
@@ -328,13 +344,13 @@ void Graph::plotRelation(double (*f)(double, double),
         double modulo;
         double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
 
-        for (int it = 0; !_terminate; it++) {
-            if (isnan(p0.x) || isnan(p0.y)) break;
+        for (int it = 0; it < 10000 && !_terminate; it++) {
+            if (std::isnan(p0.x) || std::isnan(p0.y)) break;
 
             derivativex = fdx(p0.x, p0.y);
             derivativey = fdy(p0.x, p0.y);
 
-            if (isnan(derivativex) || isnan(derivativey)) break;
+            if (std::isnan(derivativex) || std::isnan(derivativey)) break;
 
             modulo = derivativex * derivativex + derivativey * derivativey;
             if (modulo * aux >= error && it > 25) break;
@@ -349,6 +365,10 @@ void Graph::plotRelation(double (*f)(double, double),
             p0 = p;
         }
         if (_terminate) break;
+
+        if (f(p0.x, p0.y) * f(p0.x, p0.y) > bias) {
+            continue;
+        }
 
         std::complex<double> p = {p0.x, p0.y};
         if (codigo_do_luca(p, x0, y0, xf, yf)) {
@@ -373,12 +393,17 @@ void Graph::plotRelation(double (*f)(double, double),
 
             grad = {derivativex, derivativey};
 
-            p -= grad * f(std::real(p), std::imag(p)) / std::norm(grad);
+            auto pointJmp = grad * f(std::real(p), std::imag(p)) / std::norm(grad);
+            p -= pointJmp;
 
             derivativex = fdx(std::real(p), std::imag(p));
             derivativey = fdy(std::real(p), std::imag(p));
 
             grad = {derivativex, derivativey};
+
+            auto v = f(std::real(p), std::imag(p)) * f(std::real(p), std::imag(p));
+            if (v > bias)
+                break;
 
             plotLine(sf::Vector2f(std::real(p1), std::imag(p1)),
                      sf::Vector2f(std::real(p), std::imag(p)), color);
@@ -395,18 +420,8 @@ void Graph::plotRelation(double (*f)(double, double),
 
             std::complex<double> grad = {derivativex, derivativey};
 
-            paux -=
-                grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
-
-            // derivativex = (f(std::real(paux) + e, std::imag(paux)) -
-            // f(std::real(paux), std::imag(paux))) / e; derivativey =
-            // (f(std::real(paux), std::imag(paux) + e) - f(std::real(paux),
-            // std::imag(paux))) / e;
-
-            // grad = { derivativex, derivativey };
-
-            // paux -= grad * f(std::real(paux), std::imag(paux)) /
-            // std::norm(grad);
+            auto pointJmp = grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            paux -= pointJmp;
 
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({std::real(paux), std::imag(paux)});
@@ -420,8 +435,8 @@ void Graph::plotRelation(double (*f)(double, double),
 
             std::complex<double> grad = {derivativex, derivativey};
 
-            paux -=
-                grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            auto pointJmp = grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            paux -= pointJmp;
 
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({std::real(paux), std::imag(paux)});
@@ -435,8 +450,8 @@ void Graph::plotRelation(double (*f)(double, double),
 
             std::complex<double> grad = {derivativex, derivativey};
 
-            paux -=
-                grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            auto pointJmp = grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            paux -= pointJmp;
 
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({std::real(paux), std::imag(paux)});
@@ -459,12 +474,17 @@ void Graph::plotRelation(double (*f)(double, double),
 
             grad = {derivativex, derivativey};
 
-            p -= grad * f(std::real(p), std::imag(p)) / std::norm(grad);
+            auto pointJmp = grad * f(std::real(p), std::imag(p)) / std::norm(grad);
+            p -= pointJmp;
 
             derivativex = fdx(std::real(p), std::imag(p));
             derivativey = fdy(std::real(p), std::imag(p));
 
             grad = {derivativex, derivativey};
+
+            auto v = f(std::real(p), std::imag(p)) * f(std::real(p), std::imag(p));
+            if (v > bias)
+                break;
 
             plotLine(sf::Vector2f(std::real(p1), std::imag(p1)),
                      sf::Vector2f(std::real(p), std::imag(p)), color);
@@ -481,8 +501,8 @@ void Graph::plotRelation(double (*f)(double, double),
 
             std::complex<double> grad = {derivativex, derivativey};
 
-            paux -=
-                grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            auto pointJmp = grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            paux -= pointJmp;
 
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({std::real(paux), std::imag(paux)});
@@ -496,8 +516,8 @@ void Graph::plotRelation(double (*f)(double, double),
 
             std::complex<double> grad = {derivativex, derivativey};
 
-            paux -=
-                grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            auto pointJmp = grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            paux -= pointJmp;
 
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({std::real(paux), std::imag(paux)});
@@ -511,14 +531,15 @@ void Graph::plotRelation(double (*f)(double, double),
 
             std::complex<double> grad = {derivativex, derivativey};
 
-            paux -=
-                grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            auto pointJmp = grad * f(std::real(paux), std::imag(paux)) / std::norm(grad);
+            paux -= pointJmp;
 
             if (!codigo_do_luca(paux, x0, y0, xf, yf, false))
                 pontos.push_back({std::real(paux), std::imag(paux)});
         }
-
     }
+
+    fmt::print("Terminou de plotar!\n");
 }
 
 // Display Function Implementation
@@ -578,12 +599,19 @@ void Graph::display() {
 void Graph::faz() {
     static int ini = 0;
     static int var = 0;
-    static sf::Color lineColor = sf::Color(0, 255, 255);
+    // static sf::Color lineColor = sf::Color(0, 255, 255);
 
     bool passou = false;
 
     int x = k;
     for (; ini < x; ini++) {
+        // sf::Color const& lineColor = _lines1[ini].color;
+        sf::Color lineColor = sf::Color(255, 0, 0);
+        auto ddd = (_lines1[ini].position.x/1000.0)*255.0;
+        lineColor.r -= 255 - ddd;
+        lineColor.b = ddd;
+        lineColor.g = (_lines1[ini].position.y/1000.0)*255.0;
+
         float d =
             std::sqrt((_lines1[ini].position.x - _lines2[ini].position.x) *
                           (_lines1[ini].position.x - _lines2[ini].position.x) +
@@ -606,11 +634,6 @@ void Graph::faz() {
         line.rotate(theta);
         _plotTexture.draw(line);
         passou = true;
-        // var++;
-        if (var >= 100) {
-            var = 0;
-            lineColor = sf::Color(rng() % 256, rng() % 256, rng() % 256);
-        }
     }
     if (passou) _plotTexture.display();
 }
