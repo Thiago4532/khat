@@ -341,9 +341,15 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
         double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
 
         // TODO: Avoid the hack
-        for (int it = 0; !_terminate && it < 10000; it++) {
+        for (int it = 0; !_terminate; it++) {
+            if (isnan(p0.x) || isnan(p0.y))
+                break;
+
             derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
             derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
+            
+            if (isnan(derivativex) || isnan(derivativey))
+                break;
 
             modulo = derivativex * derivativex + derivativey * derivativey;
             if (modulo * aux >= error && it > 25)
