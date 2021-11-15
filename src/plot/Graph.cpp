@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 #include <queue>
+#include <cmath>
 #include <random>
 
 //Setters Implementations
@@ -269,6 +270,9 @@ bool Graph::codigo_do_luca(std::complex<double> const& c, double x0, double y0, 
     auto x = real(c);
     auto y = imag(c);
 
+    if (std::isnan(x) || std::isnan(y))
+        return true;
+
     if (x < x0 || x > xf || y < y0 || y > yf)
         return true;
 
@@ -336,7 +340,8 @@ void Graph::plotRelation(double (*f)(double, double), const sf::Color& color) {
         double modulo;
         double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
 
-        for (int it = 0; !_terminate; it++) {
+        // TODO: Avoid the hack
+        for (int it = 0; !_terminate && it < 10000; it++) {
             derivativex = (f(p0.x + e, p0.y) - f(p0.x, p0.y)) / e;
             derivativey = (f(p0.x, p0.y + e) - f(p0.x, p0.y)) / e;
 

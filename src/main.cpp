@@ -27,7 +27,7 @@ int main() {
     std::string eval = parser.eval();
     fmt::print("{}\n", eval);
 
-    // parser.simplify();
+    parser.simplify();
 
     eval = parser.eval();
     fmt::print("{}\n", eval);
