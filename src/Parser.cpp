@@ -13,11 +13,11 @@ bool isNumber(std::string const& str) {
     return std::count(str.begin(), str.end(), '.') <= 1;
 }
 
-Parser::Parser(Lexer const& lexer) {
+ParserTree::ParserTree(Lexer const& lexer) {
     _parent = nullptr;
     _kidIndex = -1;
     std::stack<Token> op_stack;
-    std::vector<Token> rpn; // reverse polish notation
+    std::vector<Token> rpn;  // reverse polish notation
 
     for (auto const& token : lexer) {
         switch (token.type) {
@@ -30,7 +30,8 @@ Parser::Parser(Lexer const& lexer) {
                 op_stack.push(token);
                 break;
             case TokenType::PARENTHESIS_CLOSE:
-                while (!op_stack.empty() && op_stack.top().type != TokenType::PARENTHESIS_OPEN) {
+                while (!op_stack.empty() &&
+                       op_stack.top().type != TokenType::PARENTHESIS_OPEN) {
                     rpn.push_back(op_stack.top());
                     op_stack.pop();
                 }
@@ -42,8 +43,9 @@ Parser::Parser(Lexer const& lexer) {
                 break;
             case TokenType::INVALID:
                 throw std::logic_error("Pelo menos é invalido!");
-            default: // operator or function
-                while (!op_stack.empty() && Precedence::compare(op_stack.top(), token)) {
+            default:  // operator or function
+                while (!op_stack.empty() &&
+                       Precedence::compare(op_stack.top(), token)) {
                     rpn.push_back(op_stack.top());
                     op_stack.pop();
                 }
@@ -59,19 +61,17 @@ Parser::Parser(Lexer const& lexer) {
         op_stack.pop();
     }
 
-    Parser* parser = _build(rpn);
+    ParserTree* parser = build(rpn);
     *this = *parser;
     delete parser;
 
-    if (!rpn.empty())
-        throw std::runtime_error("bad input! (1)");
+    if (!rpn.empty()) throw std::runtime_error("bad input! (1)");
 }
 
-Parser* Parser::_build(std::vector<Token>& rpn) {
-    if (rpn.empty())
-        throw std::runtime_error("bad input! (2)");
+ParserTree* ParserTree::build(std::vector<Token>& rpn) {
+    if (rpn.empty()) throw std::runtime_error("bad input! (2)");
 
-    Parser* parser = new Parser();
+    ParserTree* parser = new ParserTree();
     parser->_token = rpn.back();
     rpn.pop_back();
 
@@ -82,41 +82,37 @@ Parser* Parser::_build(std::vector<Token>& rpn) {
         case TokenType::OP_DIVIDE:
         case TokenType::OP_POWER:
             parser->_children.resize(2);
-            parser->_children[1] = _build(rpn);
+            parser->_children[1] = build(rpn);
             parser->_children[1]->_parent = parser;
             parser->_children[1]->_kidIndex = 1;
-            parser->_children[0] = _build(rpn);
+            parser->_children[0] = build(rpn);
             parser->_children[0]->_kidIndex = 0;
             parser->_children[0]->_parent = parser;
             break;
 
-        case TokenType::NUMBER: // leaf node
+        case TokenType::NUMBER:  // leaf node
             if (!isNumber(*parser->_token.name))
                 throw std::runtime_error("invalid double!");
 
             parser->_double = std::stod(*parser->_token.name);
             break;
-        case TokenType::VARIABLE: // leaf node
+        case TokenType::VARIABLE:  // leaf node
         case TokenType::VARIABLE_Y:
             break;
 
-        default: // function or unary operators
+        default:  // function or unary operators
             // if (Functions::unaries.count(*_token.name) == 0
             //     throw std::runtime_error("invalid )function name!");
 
             parser->_children.resize(1);
-            parser->_children[0] = _build(rpn);
+            parser->_children[0] = build(rpn);
             break;
     }
 
     return parser;
 }
 
-double Parser::evaluate(double x) const {
-    return evaluate(x, 0);
-}
-
-double Parser::evaluate(double x, double y) const {
+double ParserTree::evaluate(double x, double y) const {
     switch (_token.type) {
         case TokenType::VARIABLE:
             return x;
@@ -134,19 +130,21 @@ double Parser::evaluate(double x, double y) const {
         case TokenType::OP_DIVIDE:
             return _children[0]->evaluate(x, y) / _children[1]->evaluate(x, y);
         case TokenType::OP_POWER:
-            return std::pow(_children[0]->evaluate(x, y), _children[1]->evaluate(x, y));
+            return std::pow(_children[0]->evaluate(x, y),
+                            _children[1]->evaluate(x, y));
 
         case TokenType::OP_POSITIVE:
         case TokenType::OP_NEGATIVE:
         case TokenType::FUNCTION:
-            return Functions::unaries[*_token.name](_children[0]->evaluate(x, y));
+            return Functions::unaries[*_token.name](
+                _children[0]->evaluate(x, y));
 
         default:
             throw std::runtime_error("como?");
     }
 }
 
-void Parser::simplify(Parser*& parser) {
+void ParserTree::simplify(ParserTree*& parser) {
     for (auto& v : parser->_children) {
         simplify(v);
     }
@@ -155,7 +153,8 @@ void Parser::simplify(Parser*& parser) {
         return;
     }
 
-    if (parser->_children.size() == 1 && parser->_children[0]->_token.type == TokenType::NUMBER) {
+    if (parser->_children.size() == 1 &&
+        parser->_children[0]->_token.type == TokenType::NUMBER) {
         double x = parser->evaluate(*parser->_children[0]->_double);
         delete parser->_children[0];
         parser->_children.clear();
@@ -165,8 +164,11 @@ void Parser::simplify(Parser*& parser) {
         return;
     }
 
-    if (parser->_children.size() == 2 && parser->_children[0]->_token.type == TokenType::NUMBER && parser->_children[1]->_token.type == TokenType::NUMBER) {
-        double x = parser->evaluate(*parser->_children[0]->_double, *parser->_children[1]->_double);
+    if (parser->_children.size() == 2 &&
+        parser->_children[0]->_token.type == TokenType::NUMBER &&
+        parser->_children[1]->_token.type == TokenType::NUMBER) {
+        double x = parser->evaluate(*parser->_children[0]->_double,
+                                    *parser->_children[1]->_double);
         delete parser->_children[0];
         delete parser->_children[1];
         parser->_children.clear();
@@ -177,9 +179,9 @@ void Parser::simplify(Parser*& parser) {
     }
 
     switch (parser->_token.type) {
-        case TokenType::OP_POWER:
-            if (parser->_children[1]->_token.type == TokenType::NUMBER && parser->_children[1]->_double == 0) {
-
+        case TokenType::OP_POWER: {
+            if (parser->_children[1]->_token.type == TokenType::NUMBER &&
+                parser->_children[1]->_double == 0) {
                 delete parser->_children[0];
                 delete parser->_children[1];
                 parser->_children.clear();
@@ -187,19 +189,21 @@ void Parser::simplify(Parser*& parser) {
                 parser->_token.name = "1";
                 parser->_double = 1;
 
-            } else if (parser->_children[1]->_token.type == TokenType::NUMBER && parser->_children[1]->_double == 1) {
-
+            } else if (parser->_children[1]->_token.type == TokenType::NUMBER &&
+                       parser->_children[1]->_double == 1) {
                 delete parser->_children[1];
-                Parser *aux = parser->_children[0], *aux2 = parser;
+                ParserTree *aux = parser->_children[0], *aux2 = parser;
                 aux->_parent = parser->_parent;
                 aux->_kidIndex = parser->_kidIndex;
                 parser = aux;
                 delete aux2;
             }
             break;
-        case TokenType::OP_PRODUCT:
-            if (parser->_children[1]->_token.type == TokenType::NUMBER && (parser->_children[1]->_double == 0 || parser->_children[0]->_double == 0)) {
-
+        }
+        case TokenType::OP_PRODUCT: {
+            if (parser->_children[1]->_token.type == TokenType::NUMBER &&
+                (parser->_children[1]->_double == 0 ||
+                 parser->_children[0]->_double == 0)) {
                 delete parser->_children[0];
                 delete parser->_children[1];
                 parser->_children.clear();
@@ -207,49 +211,42 @@ void Parser::simplify(Parser*& parser) {
                 parser->_token.name = "0";
                 parser->_double = 0;
 
-            } else if (parser->_children[1]->_token.type == TokenType::NUMBER && parser->_children[1]->_double == 1) {
-
+            } else if (parser->_children[1]->_token.type == TokenType::NUMBER &&
+                       parser->_children[1]->_double == 1) {
                 delete parser->_children[1];
-                Parser *aux = parser->_children[0], *aux2 = parser;
+                ParserTree *aux = parser->_children[0], *aux2 = parser;
                 aux->_parent = parser->_parent;
                 aux->_kidIndex = parser->_kidIndex;
                 parser = aux;
                 delete aux2;
-            } else if (parser->_children[0]->_token.type == TokenType::NUMBER && parser->_children[0]->_double == 1) {
-
+            } else if (parser->_children[0]->_token.type == TokenType::NUMBER &&
+                       parser->_children[0]->_double == 1) {
                 delete parser->_children[0];
-                Parser *aux = parser->_children[1], *aux2 = parser;
+                ParserTree *aux = parser->_children[1], *aux2 = parser;
                 aux->_parent = parser->_parent;
                 aux->_kidIndex = parser->_kidIndex;
                 parser = aux;
                 delete aux2;
             }
             break;
+        }
 
-        case TokenType::OP_POSITIVE:
-            Parser *aux = parser->_children[0], *aux2 = parser;
+        case TokenType::OP_POSITIVE: {
+            ParserTree *aux = parser->_children[0], *aux2 = parser;
             aux->_parent = parser->_parent;
             aux->_kidIndex = parser->_kidIndex;
             parser = aux;
             delete aux2;
             break;
-            /*case TokenType::OP_NEGATIVE:
-            if (parser->_children[0]->_token.type == TokenType::OP_NEGATIVE) {
-                Parser* aux = parser->_children[0];
-                Parser* aux2 = aux->_children[0];
-                Parser* aux3 = parser;
-                aux2->_parent = parser->_parent;
-                aux2->_kidIndex = parser->_kidIndex;
-                parser = aux2;
-                delete aux;
-                delete aux3;
-            } else if (parser->_children[0]->_token.type == TokenType::OP_MINUS) {
-                std::swap(parser->_children[0]->_children[0], parser->_children[0]->_children[1]);
-            }*/
+        }
+
+        default: {
+            break;
+        }
     }
 }
 
-std::string Parser::eval() const {
+std::string ParserTree::eval() const {
     std::string ans;
     switch (_token.type) {
         case TokenType::VARIABLE:
@@ -268,7 +265,8 @@ std::string Parser::eval() const {
         case TokenType::OP_DIVIDE:
             return _children[0]->eval() + "/" + _children[1]->eval();
         case TokenType::OP_POWER:
-            return "pow(" + _children[0]->eval() + ", " + _children[1]->eval() + ")";
+            return "pow(" + _children[0]->eval() + ", " + _children[1]->eval() +
+                   ")";
 
         case TokenType::OP_POSITIVE:
         case TokenType::OP_NEGATIVE:
@@ -280,5 +278,3 @@ std::string Parser::eval() const {
     }
 }
 
-double Parser::operator[](double x) const { return evaluate(x, 0); };
-Token const& Parser::getToken() const { return this->_token; }

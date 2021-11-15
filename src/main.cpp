@@ -22,14 +22,14 @@ int main() {
     std::string input;
     std::getline(std::cin, input);
     Lexer lexer(input);
-    Parser* parser = new Parser(lexer);
+    Parser parser(lexer);
 
-    std::string eval = parser->eval();
+    std::string eval = parser.eval();
     fmt::print("{}\n", eval);
 
-    Parser::simplify(parser);
+    // parser.simplify();
 
-    eval = parser->eval();
+    eval = parser.eval();
     fmt::print("{}\n", eval);
 
     nix::pipe pipe;
