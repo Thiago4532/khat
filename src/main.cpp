@@ -28,7 +28,9 @@ int main() {
     fmt::print("{}\n", eval);
 
     Parser::simplify(parser);
+
     eval = parser->eval();
+    fmt::print("{}\n", eval);
 
     nix::pipe pipe;
     fmt::print(pipe(1), "#include <math.h>\ndouble sum(double x, double y) {{ return {}; }}", eval);
