@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # set(SINGLE_THREAD ON)
 
 add_subdirectory(fmt)
-#set(CMAKE_CXX_FLAGS "-O2")
 
 set(NIX_SOURCES
     src/nix/tempfile.cpp
@@ -21,6 +20,7 @@ set(SOURCES
     src/Functions.cpp
     src/aux.cpp
     src/Precedence.cpp
+    src/Token.cpp
     src/Lexer.cpp
     src/Parser.cpp
     src/main.cpp

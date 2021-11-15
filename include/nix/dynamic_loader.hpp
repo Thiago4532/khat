@@ -19,6 +19,7 @@ struct rtld {
 
 class dynamic_loader {
 public:
+    dynamic_loader() = default;
     dynamic_loader(std::string const& filename);
     dynamic_loader(std::string const& filename, int flags);
     ~dynamic_loader();

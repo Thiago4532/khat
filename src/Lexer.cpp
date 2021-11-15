@@ -32,38 +32,38 @@ Lexer::Lexer(std::string const& input)
         switch (ch) {
             case '+':
                 if (isTokenANumber(lastToken))
-                    this->push_back({ TokenType::OP_PLUS, 4 });
+                    this->push_back(Token::OP_PLUS);
                 else
-                    this->push_back({ TokenType::OP_POSITIVE, 0, "+" });
+                    this->push_back(Token::OP_POSITIVE);
 
                 break;
             case '-':
                 if (isTokenANumber(lastToken))
-                    this->push_back({ TokenType::OP_MINUS, 4 });
+                    this->push_back(Token::OP_MINUS);
                 else
-                    this->push_back({ TokenType::OP_NEGATIVE, 0, "-" });
+                    this->push_back(Token::OP_NEGATIVE);
 
                 break;
             case '*':
-                this->push_back({ TokenType::OP_PRODUCT, 3 });
+                this->push_back(Token::OP_PRODUCT);
                 break;
             case '/':
-                this->push_back({ TokenType::OP_DIVIDE, 3 });
+                this->push_back(Token::OP_DIVIDE);
                 break;
             case '^':
-                this->push_back({ TokenType::OP_POWER, 0 });
+                this->push_back(Token::OP_POWER);
                 break;
             case 'x':
-                this->push_back({ TokenType::VARIABLE });
+                this->push_back(Token::VARIABLE);
                 break;
             case 'y':
-                this->push_back({ TokenType::VARIABLE_Y });
+                this->push_back(Token::VARIABLE_Y);
                 break;
             case '(':
-                this->push_back({ TokenType::PARENTHESIS_OPEN });
+                this->push_back(Token::PARENTHESIS_OPEN);
                 break;
             case ')':
-                this->push_back({ TokenType::PARENTHESIS_CLOSE });
+                this->push_back(Token::PARENTHESIS_CLOSE);
                 break;
             default:
                 std::string tokenStr;
@@ -73,7 +73,7 @@ Lexer::Lexer(std::string const& input)
                     tokenStr += input[i++];
 
                 if (!tokenStr.empty()) {
-                    this->push_back({ TokenType::NUMBER, 10, tokenStr });
+                    this->push_back(Token::number(tokenStr));
                     i--;
                     break;
                 }
@@ -84,14 +84,14 @@ Lexer::Lexer(std::string const& input)
                     tokenStr += input[i++];
 
                 if (!tokenStr.empty()) {
-                    this->push_back({ TokenType::FUNCTION, 0, tokenStr });
+                    this->push_back(Token::func(tokenStr));
                     i--;
                     break;
                 }
 
                 // unrecognized token
 
-                this->push_back({ TokenType::INVALID, 11, "???" });
+                this->push_back(Token::INVALID);
                 break;
         }
         lastToken = this->back().type;
