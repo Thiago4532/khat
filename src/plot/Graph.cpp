@@ -605,12 +605,7 @@ void Graph::faz() {
 
     int x = k;
     for (; ini < x; ini++) {
-        // sf::Color const& lineColor = _lines1[ini].color;
-        sf::Color lineColor = sf::Color(255, 0, 0);
-        auto ddd = (_lines1[ini].position.x/1000.0)*255.0;
-        lineColor.r -= 255 - ddd;
-        lineColor.b = ddd;
-        lineColor.g = (_lines1[ini].position.y/1000.0)*255.0;
+        sf::Color const& lineColor = _lines1[ini].color;
 
         float d =
             std::sqrt((_lines1[ini].position.x - _lines2[ini].position.x) *
