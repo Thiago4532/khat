@@ -342,7 +342,7 @@ void Graph::plotRelation(double (*f)(double, double),
         double error = 1e18;
         double derivativex{}, derivativey{};
         double modulo;
-        double e = 0.1 * pow(stepx * stepx + stepy * stepy, 0.5);
+        double e = 0.1 * std::sqrt(stepx * stepx + stepy * stepy);
 
         for (int it = 0; it < 10000 && !_terminate; it++) {
             if (std::isnan(p0.x) || std::isnan(p0.y)) break;

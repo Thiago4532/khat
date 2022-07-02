@@ -17,6 +17,7 @@ using thread = useless_thread;
 #else
 #include <thread>
 using thread = std::thread;
+
 #endif
 
 int main() {
@@ -27,7 +28,6 @@ int main() {
     Parser parserDx = parser.derivative('x');
     Parser parserDy = parser.derivative('y');
 
-    // TODO: Fix integer division in C
     std::string eval = parser.eval();
     fmt::print("{}\n", eval);
 
